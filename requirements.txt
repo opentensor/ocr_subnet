@@ -1,2 +1,8 @@
 bittensor
 torch
+pytesseract
+pandas
+faker
+reportlab
+pdf2image
+editdistance

@@ -20,6 +20,7 @@
 import torch
 from typing import List
 from PIL import Image
+from ocr_subnet.protocol import OCRSynapse
 from ocr_subnet.validator.utils import get_iou, get_edit_distance, get_font_distance
 
 """
@@ -59,7 +60,7 @@ where $ L $ is the loss function defined above. This probably some epsilon to av
 """
 
 
-def score_section(image: Image, section: dict, alpha_p=1.0, alpha_f=1.0, alpha_t=1.0):
+def loss(label: dict, pred: dict, alpha_p=1.0, alpha_f=1.0, alpha_t=1.0):
     """
     Score a section of the image based on the section's correctness.
     Correctness is defined as:
@@ -68,71 +69,86 @@ def score_section(image: Image, section: dict, alpha_p=1.0, alpha_f=1.0, alpha_t
     - and the edit distance between the predicted text and the ground truth text.
 
     Args:
-    - section (dict): The section of the image to score.
+    - label (dict): The ground truth data for the section.
+    - pred (dict): The predicted data for the section.
 
     Returns:
-    - float: The score for the section.
+    - float: The score for the section. Bounded between 0 and 1.
     """
     # position loss is IOU of the bounding boxes
-    rect1 = section.get('position')
-    if rect1:
-        position_loss = get_iou(rect1, image.position)
+    if pred.get('position'):
+        position_loss = get_iou(label['position'], pred['position'])
     else:
         # otherwise set to max loss
         position_loss = 1.0
 
-    font1 = section.get('font')
-    if font1:
-        font_loss = get_font_distance(font1, image.font) # this should actually calculate the font loss
+    if pred.get('font'):
+        font_loss = get_font_distance(label['font'], pred['font']) # this should actually calculate the font loss
     else:
         font_loss = 1.0
 
-    text1 = section.get('text')
-    if text1:
-        text_loss = get_edit_distance(text1, image.text)
+    if pred.get('text'):
+        text_loss = get_edit_distance(label['text'], pred['text'])
+    else:
+        text_loss = 1.0
 
-    # TODO: convert loss to reward (invert and scale)
-    # TODO: add time penalty
-    return alpha_p * position_loss + alpha_f * font_loss + alpha_t * text_loss
+    return (alpha_p * position_loss + alpha_f * font_loss + alpha_t * text_loss) / (alpha_p + alpha_f + alpha_t)
 
 
-def reward(image: Image, response: List[dict]) -> float:
+def reward(image_data: List[dict], response: OCRSynapse) -> float:
     """
     Reward the miner response to the OCR request. This method returns a reward
     value for the miner, which is used to update the miner's score.
 
     Args:
-    - image (Image): The image sent to the miner.
-    - response (List[dict]): Response from the miner.
-    
+    - image (List[dict]): The true data underlying the image sent to the miner.
+    - response (OCRSynapse): Response from the miner.
+
     The expected fields in each section of the response are:
-    - position (List[int]): The bounding box of the section e.g. [10, 20, 30, 40]
+    - position (List[int]): The bounding box of the section e.g. [x0, y0, x1, y1]
     - font (dict): The font of the section e.g. {'family': 'Times New Roman', 'size':12}
     - text (str): The text of the section e.g. 'Hello World!'
 
     Returns:
     - float: The reward value for the miner.
     """
+    predictions = response.response
+    if predictions is None:
+        return 0.0
+    # TODO: Add more specific type checking
+    """
+    We can also build in some deisrable default behaviour in case the miner is unable to do the task in the desired way:
+    - If response is a `str`, then we just assume that the order of sections is correct and the text is correct.
+    - If response is a `List[str]`, then we assume that the order of sections is correct but the text is not.
+    - If response is a `List[dict]`, then we assume that the miner has provided all the information we need.
+    """
 
-    return sum(score_section(section) for section in response)
+    predictions_loss = torch.mean([loss(label, pred) for label, pred in zip(image_data, predictions)])
+
+    # TODO: Use max time to calculate time penalty
+    alpha_time = 1.0
+    time_loss = alpha_time * response.response_time / 10
+
+    # convert loss to reward (invert and scale)
+    return 1.0 / (predictions_loss + time_loss + 1e-6)
 
 
 def get_rewards(
     self,
-    image: Image,
-    responses: List[List[dict]],
+    image_data: List[dict],
+    responses: List[OCRSynapse],
 ) -> torch.FloatTensor:
     """
     Returns a tensor of rewards for the given image and responses.
 
     Args:
-    - image (Image): The image sent to the miner.
-    - responses (List[List[dict]]): A list of responses from the miner.
+    - image (List[dict]): The true data underlying the image sent to the miner.
+    - responses (List[OCRSynapse]): A list of responses from the miner.
 
     Returns:
     - torch.FloatTensor: A tensor of rewards for the given image and responses.
     """
     # Get all the reward results by iteratively calling your reward() function.
     return torch.FloatTensor(
-        [reward(image, response) for response in responses]
+        [reward(image_data, response) for response in responses]
     ).to(self.device)

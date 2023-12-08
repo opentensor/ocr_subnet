@@ -5,46 +5,68 @@ from faker import Faker
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
+
+
 def apply_invoice_template(invoice_data, filename):
     c = canvas.Canvas(filename, pagesize=letter)
+    w, h = c._pagesize
+    print(w,h)
     c.setLineWidth(.3)
-    c.setFont('Helvetica', 12)
+    font = {'family': 'Helvetica', 'size': 12}
+    units = font.get('size')
+    c.setFont(font.get('family'), units)
+
+    data = []
+    def write_text(x, y, text):
+        c.drawString(x, y, text)
+        # scale x and y by the page size and estimate bounding box based on font size
+        # position = [x0, y0, x1, y1]
+        position = [
+            x/w,
+            1 - (y - 0.2*units)/h,
+            (x + (2 + len(text)) * 0.5*units)/w,
+            1 - (y + 1.2*units)/h
+        ]
+
+        data.append({'position': position, 'text': text, 'font': font})
 
     # Draw the invoice header
-    c.drawString(30, 750, invoice_data['company_name'])
-    c.drawString(30, 735, invoice_data['company_address'])
-    c.drawString(30, 720, invoice_data['company_city_zip'])
-    c.drawString(400, 750, "Invoice Date: " + invoice_data['invoice_date'])
-    c.drawString(400, 735, "Invoice #: " + invoice_data['invoice_number'])
+    write_text(30, 750, invoice_data['company_name'])
+    write_text(30, 735, invoice_data['company_address'])
+    write_text(30, 720, invoice_data['company_city_zip'])
+    write_text(400, 750, "Invoice Date: " + invoice_data['invoice_date'])
+    write_text(400, 735, "Invoice #: " + invoice_data['invoice_number'])
 
     # Draw the bill to section
-    c.drawString(30, 690, "Bill To:")
-    c.drawString(120, 690, invoice_data['customer_name'])
+    write_text(30, 690, "Bill To:")
+    write_text(120, 690, invoice_data['customer_name'])
 
     # Table headers
-    c.drawString(30, 650, "Description")
-    c.drawString(300, 650, "Qty")
-    c.drawString(460, 650, "Cost")
+    write_text(30, 650, "Description")
+    write_text(300, 650, "Qty")
+    write_text(460, 650, "Cost")
     c.line(30, 645, 560, 645)
 
     # List items
     line_height = 625
     total = 0
     for item in invoice_data['items']:
-        c.drawString(30, line_height, item['desc'])
-        c.drawString(300, line_height, str(item['qty']))
-        c.drawString(460, line_height, "${:.2f}".format(item['cost']))
+        write_text(30, line_height, item['desc'])
+        write_text(300, line_height, str(item['qty']))
+        write_text(460, line_height, "${:.2f}".format(item['cost']))
         total += item['qty'] * item['cost']
         line_height -= 15
 
     # Draw the total cost
-    c.drawString(400, line_height - 15, f"Total: ${total:,.2f}" )
+    write_text(400, line_height - 15, f"Total: ${total:,.2f}" )
 
     # Terms and Conditions
-    c.drawString(30, line_height - 45, "Terms:")
-    c.drawString(120, line_height - 45, invoice_data['terms'])
+    write_text(30, line_height - 45, "Terms:")
+    write_text(120, line_height - 45, invoice_data['terms'])
 
     c.save()
+    return data
+
 
 def create_invoice(root_dir):
 
@@ -91,7 +113,8 @@ def create_invoice(root_dir):
     # make a random hash for the filename
     filename = f"{fake.sha256()}.pdf"
     path = os.path.join(root_dir, filename)
+    
     # Use the function and pass the data and the filename you want to save as
-    apply_invoice_template(invoice_info, path)
+    data = apply_invoice_template(invoice_info, path)
 
-    return path
+    return data, path

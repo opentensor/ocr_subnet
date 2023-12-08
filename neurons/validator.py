@@ -23,12 +23,10 @@ import time
 # Bittensor
 import bittensor as bt
 
-# Bittensor Validator Template:
-import template
-from template.validator import forward
+from ocr_subnet.validator import forward
 
 # import base validator class which takes care of most of the boilerplate
-from template.base.validator import BaseValidatorNeuron
+from ocr_subnet.base.validator import BaseValidatorNeuron
 
 
 class Validator(BaseValidatorNeuron):

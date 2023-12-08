@@ -20,12 +20,13 @@
 import time
 import typing
 import bittensor as bt
+import pytesseract
 
 # Bittensor Miner Template:
-import template
+import ocr_subnet
 
 # import base miner class which takes care of most of the boilerplate
-from template.base.miner import BaseMinerNeuron
+from ocr_subnet.base.miner import BaseMinerNeuron
 
 
 class Miner(BaseMinerNeuron):
@@ -43,27 +44,48 @@ class Miner(BaseMinerNeuron):
         # TODO(developer): Anything specific to your use case you can do here
 
     async def forward(
-        self, synapse: template.protocol.Dummy
-    ) -> template.protocol.Dummy:
+        self, synapse: ocr_subnet.protocol.OCRSynapse
+    ) -> ocr_subnet.protocol.OCRSynapse:
         """
-        Processes the incoming 'Dummy' synapse by performing a predefined operation on the input data.
-        This method should be replaced with actual logic relevant to the miner's purpose.
+        Processes the incoming OCR synapse and attaches the response to the synapse.
 
         Args:
-            synapse (template.protocol.Dummy): The synapse object containing the 'dummy_input' data.
+            synapse (ocr_subnet.protocol.OCRSynapse): The synapse object containing the image data.
 
         Returns:
-            template.protocol.Dummy: The synapse object with the 'dummy_output' field set to twice the 'dummy_input' value.
+            ocr_subnet.protocol.OCRSynapse: The synapse object with the 'response' field set to the extracted data.
 
-        The 'forward' function is a placeholder and should be overridden with logic that is appropriate for
-        the miner's intended operation. This method demonstrates a basic transformation of input data.
         """
-        # TODO(developer): Replace with actual implementation logic.
-        synapse.dummy_output = synapse.dummy_input * 2
+
+        image = synapse.image
+        # Use pytesseract to get the data
+        data = pytesseract.image_to_data(image, output_type=pytesseract.Output.DICT)
+
+        # Initialize the response list
+        response = []
+
+        # Loop over each item in the 'text' part of the data
+        for i in range(len(data['text'])):
+            if data['text'][i].strip() != '':  # This filters out empty text results
+                x1, y1, width, height = data['left'][i], data['top'][i], data['width'][i], data['height'][i]
+                x2, y2 = x1 + width, y1 + height
+
+                # Here we don't have font information, so we'll omit that.
+                # Pytesseract does not extract font family or size information.
+                entry = {
+                    'index': i,
+                    'position': [x1, y1, x2, y2],
+                    'text': data['text'][i]
+                }
+                response.append(entry)
+
+        # Attach response to synapse and return it.
+        synapse.response = response
+
         return synapse
 
     async def blacklist(
-        self, synapse: template.protocol.Dummy
+        self, synapse: ocr_subnet.protocol.OCRSynapse
     ) -> typing.Tuple[bool, str]:
         """
         Determines whether an incoming request should be blacklisted and thus ignored. Your implementation should
@@ -74,7 +96,7 @@ class Miner(BaseMinerNeuron):
         requests before they are deserialized to avoid wasting resources on requests that will be ignored.
 
         Args:
-            synapse (template.protocol.Dummy): A synapse object constructed from the headers of the incoming request.
+            synapse (template.protocol.OCRSynapse): A synapse object constructed from the headers of the incoming request.
 
         Returns:
             Tuple[bool, str]: A tuple containing a boolean indicating whether the synapse's hotkey is blacklisted,
@@ -107,7 +129,7 @@ class Miner(BaseMinerNeuron):
         )
         return False, "Hotkey recognized!"
 
-    async def priority(self, synapse: template.protocol.Dummy) -> float:
+    async def priority(self, synapse: ocr_subnet.protocol.OCRSynapse) -> float:
         """
         The priority function determines the order in which requests are handled. More valuable or higher-priority
         requests are processed before others. You should design your own priority mechanism with care.
@@ -115,7 +137,7 @@ class Miner(BaseMinerNeuron):
         This implementation assigns priority to incoming requests based on the calling entity's stake in the metagraph.
 
         Args:
-            synapse (template.protocol.Dummy): The synapse object that contains metadata about the incoming request.
+            synapse (template.protocol.OCRSynapse): The synapse object that contains metadata about the incoming request.
 
         Returns:
             float: A priority score derived from the stake of the calling entity.

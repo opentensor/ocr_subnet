@@ -1,5 +1,5 @@
-
 import editdistance
+
 
 def get_iou(bb1, bb2):
     """
@@ -51,6 +51,7 @@ def get_iou(bb1, bb2):
     assert iou <= 1.0
     return iou
 
+
 def get_edit_distance(text1: str, text2: str):
     """Calculate the edit distance between two strings.
 
@@ -84,4 +85,6 @@ def get_font_distance(font1: dict, font2: dict):
     float
         The distance between the two fonts. Normalized to be between 0 and 1.
     """
-    return 0
+    font_size_loss = abs(font1['size'] - font2['size']) / max(font1['size'], font2['size'])
+    font_family_loss = 0.0 if font1['family'] == font2['family'] else 1.0
+    return (font_size_loss + font_family_loss) / 2

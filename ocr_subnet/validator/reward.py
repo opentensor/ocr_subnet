@@ -18,46 +18,11 @@
 # DEALINGS IN THE SOFTWARE.
 
 import torch
+import bittensor as bt
 from typing import List
 from PIL import Image
 from ocr_subnet.protocol import OCRSynapse
 from ocr_subnet.validator.utils import get_iou, get_edit_distance, get_font_distance
-
-"""
-Loss function for OCR model:
-
-$$ L = \sum_i \alpha_p L^p_i + \alpha_f L^f_i + \alpha_t L^t_i $$
-
-where
-
-$ L^p_i $ is the loss for section i based on positional/layout correctness. This should be zero if the OCR model returns the exact box on the page.
-
-We propose that the positional loss is the intersection over union of the bounding boxes:
-$$ L^p_i = IOU(\hat{b}_i, b_i) $$
-
-where $ \hat{b}_i $ is the predicted bounding box and $ b_i $ is the ground truth bounding box.
-
-
-$ L^f_i $ is the loss for section i based on font correctness. This should be zero if the OCR model returns the exact font for the section, including font family, font size and perhaps even colors.
-
-We propose that the font loss is a delta between the predicted font and the ground truth font plus the square of the difference in font size:
-$$ L^f_i = \alpha_f^f (1 - \delta(\hat{f}_i, f_i) )+ \alpha_f^s (\hat{s}_i - s_i)^2 $$
-
-$ L^t_i $ is the loss for section i based on text correctness. This should be zero if the OCR model returns the exact text for the section.
-
-We propose that the text loss is the edit distance between the predicted text and the ground truth text:
-$$ L^t_i = ED(\hat{t}_i, t_i) $$
-
-where $ ED $ is the edit distance function. This is equivalent to the Levenshtein distance.
-
-$ \alpha_p, \alpha_f, \alpha_t $ are weights for each of the loss terms. These will impact the difficulty of the OCR challenge as text correctness is likely much easier than position correctness etc.
-
-We will invert the loss to produce a reward which is to be maximized by the miner. The reward is:
-
-$$ R = 1 / L $$
-
-where $ L $ is the loss function defined above. This probably some epsilon to avoid division by zero.
-"""
 
 
 def loss(label: dict, pred: dict, alpha_p=1.0, alpha_f=1.0, alpha_t=1.0):
@@ -83,7 +48,7 @@ def loss(label: dict, pred: dict, alpha_p=1.0, alpha_f=1.0, alpha_t=1.0):
         position_loss = 1.0
 
     if pred.get('font'):
-        font_loss = get_font_distance(label['font'], pred['font']) # this should actually calculate the font loss
+        font_loss = get_font_distance(label['font'], pred['font'])
     else:
         font_loss = 1.0
 
@@ -92,7 +57,11 @@ def loss(label: dict, pred: dict, alpha_p=1.0, alpha_f=1.0, alpha_t=1.0):
     else:
         text_loss = 1.0
 
-    return (alpha_p * position_loss + alpha_f * font_loss + alpha_t * text_loss) / (alpha_p + alpha_f + alpha_t)
+    total_loss = (alpha_p * position_loss + alpha_f * font_loss + alpha_t * text_loss) / (alpha_p + alpha_f + alpha_t)
+
+    bt.logging.info(f"position_loss: {position_loss}, font_loss: {font_loss}, text_loss: {text_loss}, total_loss: {total_loss}")
+
+    return total_loss
 
 
 def reward(image_data: List[dict], response: OCRSynapse) -> float:
@@ -123,14 +92,23 @@ def reward(image_data: List[dict], response: OCRSynapse) -> float:
     - If response is a `List[dict]`, then we assume that the miner has provided all the information we need.
     """
 
+    # Take mean score over all sections in document
+    # TODO: Handle more flexible response types (e.g. maybe check that order and length are consistent with image_data)
     predictions_loss = torch.mean([loss(label, pred) for label, pred in zip(image_data, predictions)])
 
     # TODO: Use max time to calculate time penalty
     alpha_time = 1.0
     time_loss = alpha_time * response.response_time / 10
+    bt.logging.info(f"response_time: {response.response_time}, time_loss: {time_loss}")
 
     # convert loss to reward (invert and scale)
-    return 1.0 / (predictions_loss + time_loss + 1e-6)
+    raw_reward = 1.0 / (predictions_loss + time_loss + 1e-6)
+    # NOTE: Tanh will saturate quickly and so two losses of 0.1 and 0.01 would produce raw_rewards of 10 and 100 which would both have tanh values of effectively 1.0.
+    normalized_reward = torch.tanh(raw_reward)
+
+    bt.logging.info(f"predictions_loss: {predictions_loss}, raw_reward: {raw_reward}, normalized_reward: {normalized_reward}")
+    return normalized_reward
+
 
 
 def get_rewards(

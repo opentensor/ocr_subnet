@@ -31,8 +31,8 @@ class OCRSynapse(bt.Synapse):
     - response: List[dict] containing data extracted from the image.
     """
 
-    # Required request input, filled by sending dendrite caller.
-    image: int
+    # Required request input, filled by sending dendrite caller. It is a base64 encoded string.
+    base64_image: str
 
     # Optional request output, filled by recieving axon.
     response: typing.Optional[typing.List[dict]] = None

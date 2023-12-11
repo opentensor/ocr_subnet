@@ -76,25 +76,24 @@ Before you proceed with the installation of the subnet, note the following:
 
 ---
 
-## Writing your own incentive mechanism
 
-As described in [Quickstarter template](#quickstarter-template) section above, when you are ready to write your own incentive mechanism, update this template repository by editing the following files. The code in these files contains detailed documentation on how to update the template. Read the documentation in each of the files to understand how to update the template. There are multiple **TODO**s in each of the files identifying sections you should update. These files are:
-- `template/protocol.py`: Contains the definition of the wire-protocol used by miners and validators.
-- `neurons/miner.py`: Script that defines the miner's behavior, i.e., how the miner responds to requests from validators.
-- `neurons/validator.py`: This script defines the validator's behavior, i.e., how the validator requests information from the miners and determines the scores.
-- `template/forward.py`: Contains the definition of the validator's forward pass.
-- `template/reward.py`: Contains the definition of how validators reward miner responses.
+## What we changed to make our repo
 
-In addition to the above files, you should also update the following files:
+- Rename `/template` to `/ocr_subnet`
+- `ocr_subnet/protocol.py`: Rename the synapse to `OCRSynapse` and provide the necessary attributes to communication between miner and validator
+- `ocr_subnet/forward.py`: Included the synthetic data generation (invoice pdf), used `OCRSynapse`. 
+- `ocr_subnet/reward.py`: Added custom loss function to calculate the reward
+- `neurons/miner.py`: Use `pytesseract` for OCR, and use `OCRSynapse` to communicate with validator
+
+### Remaining changes to be done
+In addition to the above files, we would also update the following files:
 - `README.md`: This file contains the documentation for your project. Update this file to reflect your project's documentation.
 - `CONTRIBUTING.md`: This file contains the instructions for contributing to your project. Update this file to reflect your project's contribution guidelines.
 - `template/__init__.py`: This file contains the version of your project.
 - `setup.py`: This file contains the metadata about your project. Update this file to reflect your project's metadata.
-- `docs/`: This directory contains the documentation for your project. Update this directory to reflect your project's documentation.
 
-__Note__
-The `template` directory should also be renamed to your project name.
----
+
+
 
 ## License
 This repository is licensed under the MIT License.

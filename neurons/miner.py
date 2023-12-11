@@ -25,6 +25,8 @@ import pytesseract
 # Bittensor Miner Template:
 import ocr_subnet
 
+from ocr_subnet.utils.serialize import deserialize_image
+
 # import base miner class which takes care of most of the boilerplate
 from ocr_subnet.base.miner import BaseMinerNeuron
 
@@ -57,13 +59,11 @@ class Miner(BaseMinerNeuron):
 
         """
 
-        image = synapse.image
+        image = deserialize_image(base64_string=synapse.base64_image)
         # Use pytesseract to get the data
         data = pytesseract.image_to_data(image, output_type=pytesseract.Output.DICT)
 
-        # Initialize the response list
         response = []
-
         # Loop over each item in the 'text' part of the data
         for i in range(len(data['text'])):
             if data['text'][i].strip() != '':  # This filters out empty text results

@@ -25,6 +25,7 @@ from PIL import Image
 from ocr_subnet.protocol import OCRSynapse
 from ocr_subnet.validator.reward import get_rewards
 from ocr_subnet.utils.uids import get_random_uids
+from ocr_subnet.utils.serialize import serialize_image
 from ocr_subnet.validator.generate import create_invoice
 from ocr_subnet.validator.corrupt import corrupt_image
 
@@ -70,7 +71,10 @@ async def forward(self):
     """
     The forward function is called by the validator every time step.
 
-    It is responsible for querying the network and scoring the responses.
+    It consists of 3 important steps:
+    - Generate a challenge for the miners (in this case it creates a synthetic invoice image)
+    - Query the miners with the challenge
+    - Score the responses from the miners
 
     Args:
         self (:obj:`bittensor.neuron.Neuron`): The neuron object which contains all the necessary state for the validator.
@@ -81,12 +85,12 @@ async def forward(self):
     miner_uids = get_random_uids(self, k=self.config.neuron.sample_size)
 
     # Create a random image and load it.
-    image_path = generate_image()
+    image_data, image_path = generate_image(corrupt=True)
     image = load_image(image_path)
 
     # Create synapse object to send to the miner and attach the image.
-    # TODO: it's probably not possible to send the image directly, so you'll need to encode it somehow.
-    synapse = OCRSynapse(image = image)
+    # convert PIL image into a json serializable format
+    synapse = OCRSynapse(base64_image = serialize_image(image))
 
     # The dendrite client queries the network.
     responses = self.dendrite.query(
@@ -94,17 +98,18 @@ async def forward(self):
         axons=[self.metagraph.axons[uid] for uid in miner_uids],
         # Pass the synapse to the miner.
         synapse=synapse,
-        # All responses have the deserialize function called on them before returning.
-        # You are encouraged to define your own deserialization function.
-        deserialize=True,
+        # Do not deserialize the response so that we have access to the raw response.
+        deserialize=False,
     )
 
     # Log the results for monitoring purposes.
     bt.logging.info(f"Received responses: {responses}")
 
-    # TODO: We need ground truth labels to score the responses!
-    rewards = get_rewards(self, query=self.step, responses=responses)
+    rewards = get_rewards(self, image_data=image_data, responses=responses)
 
     bt.logging.info(f"Scored responses: {rewards}")
     # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
     self.update_scores(rewards, miner_uids)
+
+    # TODO: return an event which can be logged by the validator.
+    # return event#

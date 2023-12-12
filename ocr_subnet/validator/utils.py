@@ -1,7 +1,7 @@
 import editdistance
 
 
-def get_iou(bb1, bb2):
+def get_iou(bb1, bb2 = None):
     """
     Calculate the Intersection over Union (IoU) of two bounding boxes.
     NOTE: Thanks to this guy! https://stackoverflow.com/questions/25349178/calculating-percentage-of-bounding-box-overlap-for-image-detector-evaluation
@@ -21,6 +21,10 @@ def get_iou(bb1, bb2):
     -------
     float: Normalized between 0 and 1.
     """
+
+    if not bb2:
+        return 1.0
+
     assert bb1['x1'] < bb1['x2']
     assert bb1['y1'] < bb1['y2']
     assert bb2['x1'] < bb2['x2']
@@ -52,7 +56,7 @@ def get_iou(bb1, bb2):
     return iou
 
 
-def get_edit_distance(text1: str, text2: str):
+def get_edit_distance(text1: str, text2: str = None):
     """Calculate the edit distance between two strings.
 
     Parameters
@@ -67,10 +71,12 @@ def get_edit_distance(text1: str, text2: str):
     float
         The edit distance between the two strings, normalized to be between 0 and 1.
     """
+    if not text2:
+        return 1.0
 
     return editdistance.eval(text1, text2) / max(len(text1), len(text2))
 
-def get_font_distance(font1: dict, font2: dict):
+def get_font_distance(font1: dict, font2: dict = None):
     """Calculate the distance between two fonts.
 
     Parameters
@@ -85,6 +91,9 @@ def get_font_distance(font1: dict, font2: dict):
     float
         The distance between the two fonts. Normalized to be between 0 and 1.
     """
+    if not font2:
+        return 1.0
+
     font_size_loss = abs(font1['size'] - font2['size']) / max(font1['size'], font2['size'])
     font_family_loss = 0.0 if font1['family'] == font2['family'] else 1.0
     return (font_size_loss + font_family_loss) / 2

@@ -40,22 +40,9 @@ def loss(label: dict, pred: dict, alpha_p=1.0, alpha_f=1.0, alpha_t=1.0):
     Returns:
     - float: The score for the section. Bounded between 0 and 1.
     """
-    # position loss is IOU of the bounding boxes
-    if pred.get('position'):
-        position_loss = get_iou(label['position'], pred['position'])
-    else:
-        # otherwise set to max loss
-        position_loss = 1.0
-
-    if pred.get('font'):
-        font_loss = get_font_distance(label['font'], pred['font'])
-    else:
-        font_loss = 1.0
-
-    if pred.get('text'):
-        text_loss = get_edit_distance(label['text'], pred['text'])
-    else:
-        text_loss = 1.0
+    position_loss = get_iou(label['position'], pred.get('position'))
+    font_loss = get_font_distance(label['font'], pred.get('font'))
+    text_loss = get_edit_distance(label['text'], pred.get('text'))
 
     total_loss = (alpha_p * position_loss + alpha_f * font_loss + alpha_t * text_loss) / (alpha_p + alpha_f + alpha_t)
 

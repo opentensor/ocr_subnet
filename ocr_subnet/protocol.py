@@ -1,7 +1,5 @@
 # The MIT License (MIT)
 # Copyright © 2023 Yuma Rao
-# TODO(developer): Set your name
-# Copyright © 2023 <your name>
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
@@ -17,9 +15,9 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-import typing
-import bittensor as bt
 
+import bittensor as bt
+from typing import Optional, List
 
 class OCRSynapse(bt.Synapse):
     """
@@ -27,7 +25,7 @@ class OCRSynapse(bt.Synapse):
     This protocol enables communication betweenthe miner and the validator.
 
     Attributes:
-    - image: A pdf image to be processed by the miner.
+    - base64_image: Base64 encoding of pdf image to be processed by the miner.
     - response: List[dict] containing data extracted from the image.
     """
 
@@ -35,14 +33,13 @@ class OCRSynapse(bt.Synapse):
     base64_image: str
 
     # Optional request output, filled by recieving axon.
-    response: typing.Optional[typing.List[dict]] = None
+    response: Optional[List[dict]] = None
 
-    def deserialize(self) -> int:
+    def deserialize(self) -> List[dict]:
         """
-        Deserialize the miner response. This method retrieves the response from
-        the miner in the form of `response`, maybe this also takes care of casting it to List[dict]?
+        Deserialize the miner response.
 
         Returns:
-        - List[dict: The deserialized response, which is a list of dictionaries containing the extracted data.
+        - List[dict]: The deserialized response, which is a list of dictionaries containing the extracted data.
         """
         return self.response

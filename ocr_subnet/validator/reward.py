@@ -1,7 +1,5 @@
 # The MIT License (MIT)
 # Copyright © 2023 Yuma Rao
-# TODO(developer): Set your name
-# Copyright © 2023 <your name>
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
@@ -20,12 +18,75 @@
 import torch
 import bittensor as bt
 from typing import List
-from PIL import Image
+
+from scipy.optimize import linear_sum_assignment
+
 from ocr_subnet.protocol import OCRSynapse
-from ocr_subnet.validator.utils import get_iou, get_edit_distance, get_font_distance
 
 
-def loss(label: dict, pred: dict, alpha_p=1.0, alpha_f=1.0, alpha_t=1.0):
+def get_position_reward(boxA: List[float], boxB: List[float] = None):
+    """
+    Calculate the intersection over union (IoU) of two bounding boxes.
+
+    Args:
+    - boxA (list): Bounding box coordinates of box A in the format [x1, y1, x2, y2].
+    - boxB (list): Bounding box coordinates of box B in the format [x1, y1, x2, y2].
+
+    Returns:
+    - float: The IoU value, ranging from 0 to 1.
+    """
+    if not boxB:
+        return 0.0
+
+    xA = max(boxA[0], boxB[0])
+    yA = max(boxA[1], boxB[1])
+    xB = min(boxA[2], boxB[2])
+    yB = min(boxA[3], boxB[3])
+
+    intersection_area = max(0, xB - xA + 1) * max(0, yB - yA + 1)
+
+    boxA_area = (boxA[2] - boxA[0] + 1) * (boxA[3] - boxA[1] + 1)
+    boxB_area = (boxB[2] - boxB[0] + 1) * (boxB[3] - boxB[1] + 1)
+
+    iou = intersection_area / float(boxA_area + boxB_area - intersection_area)
+
+    return iou
+
+def get_text_reward(text1: str, text2: str = None):
+    """
+    Calculate the edit distance between two strings.
+
+    Args:
+    - text1 (str): The first string.
+    - text2 (str): The second string.
+
+    Returns:
+    - float: The edit distance between the two strings. Normalized to be between 0 and 1.
+    """
+    if not text2:
+        return 0.0
+
+    return 1 - editdistance.eval(text1, text2) / max(len(text1), len(text2))
+
+def get_font_reward(font1: dict, font2: dict = None, alpha_size=1.0, alpha_family=1.0):
+    """
+    Calculate the distance between two fonts, based on the font size and font family.
+
+    Args:
+    - font1 (dict): The first font.
+    - font2 (dict): The second font.
+
+    Returns:
+    - float: The distance between the two fonts. Normalized to be between 0 and 1.
+    """
+    if not font2:
+        return 0.0
+
+    font_size_score = ( 1 - abs(font1['size'] - font2['size']) / max(font1['size'], font2['size']) )
+    font_family_score = alpha_family * float(font1['family'] == font2['family'])
+    return (alpha_size * font_size_score + alpha_family * font_family_score) / (alpha_size + alpha_family)
+
+def section_reward(label: dict, pred: dict, alpha_p=1.0, alpha_f=1.0, alpha_t=1.0, verbose=False):
     """
     Score a section of the image based on the section's correctness.
     Correctness is defined as:
@@ -40,18 +101,61 @@ def loss(label: dict, pred: dict, alpha_p=1.0, alpha_f=1.0, alpha_t=1.0):
     Returns:
     - float: The score for the section. Bounded between 0 and 1.
     """
-    position_loss = get_iou(label['position'], pred.get('position'))
-    font_loss = get_font_distance(label['font'], pred.get('font'))
-    text_loss = get_edit_distance(label['text'], pred.get('text'))
+    reward = {
+        'text': get_text_reward(label['text'], pred.get('text')),
+        'position': get_position_reward(label['position'], pred.get('position')),
+        'font': get_font_reward(label['font'], pred.get('font')),
+    }
 
-    total_loss = (alpha_p * position_loss + alpha_f * font_loss + alpha_t * text_loss) / (alpha_p + alpha_f + alpha_t)
+    reward['total'] = (alpha_t * reward['text'] + alpha_p * reward['position'] + alpha_f * reward['font']) / (alpha_p + alpha_f + alpha_t)
 
-    bt.logging.info(f"position_loss: {position_loss}, font_loss: {font_loss}, text_loss: {text_loss}, total_loss: {total_loss}")
+    if verbose:
+        bt.logging.info(', '.join([f"{k}: {v:.3f}" for k,v in reward.items()]))
 
-    return total_loss
+    return reward
+
+def sort_predictions(image_data: List[dict], predictions: List[dict], draw=False) -> List[dict]:
+    """
+    Sort the predictions to match the order of the ground truth data using the Hungarian algorithm.
+
+    Args:
+    - image_data (list): The ground truth data for the image.
+    - predictions (list): The predicted data for the image.
+
+    Returns:
+    - list: The sorted predictions.
+    """
+
+    # First, make sure that the predictions is at least as long as the image data
+    predictions += [{}] * (len(image_data) - len(predictions))
+    r = torch.zeros((len(image_data), len(predictions)))
+    for i in range(r.shape[0]):
+        for j in range(r.shape[1]):
+            r[i,j] = section_reward(image_data[i], predictions[j])['total']
+
+    # Use the Hungarian algorithm to find the best assignment
+    row_indices, col_indices = linear_sum_assignment(r, maximize=True)
+
+    if draw:
+        fig = px.imshow(r.detach().numpy(),
+                    color_continuous_scale='Blues',
+                    title=f'Optimal Assignment (Avg. Reward: {r[row_indices, col_indices].mean():.3f})',
+                    width=600, height=600
+                    )
+        fig.update_layout(coloraxis_showscale=False)
+        fig.update_yaxes(title_text='Ground Truth')
+        fig.update_xaxes(title_text='Predictions')
+
+        for i, j in zip(row_indices, col_indices):
+            fig.add_annotation(x=j, y=i, text='+', showarrow=False, font=dict(color='red', size=16))
+        fig.show()
+
+    sorted_predictions = [predictions[i] for i in col_indices]
+
+    return sorted_predictions
 
 
-def reward(image_data: List[dict], response: OCRSynapse) -> float:
+def reward(self, image_data: List[dict], response: OCRSynapse) -> float:
     """
     Reward the miner response to the OCR request. This method returns a reward
     value for the miner, which is used to update the miner's score.
@@ -71,32 +175,28 @@ def reward(image_data: List[dict], response: OCRSynapse) -> float:
     predictions = response.response
     if predictions is None:
         return 0.0
-    # TODO: Add more specific type checking
-    """
-    We can also build in some deisrable default behaviour in case the miner is unable to do the task in the desired way:
-    - If response is a `str`, then we just assume that the order of sections is correct and the text is correct.
-    - If response is a `List[str]`, then we assume that the order of sections is correct but the text is not.
-    - If response is a `List[dict]`, then we assume that the miner has provided all the information we need.
-    """
 
-    # Take mean score over all sections in document
-    # TODO: Handle more flexible response types (e.g. maybe check that order and length are consistent with image_data)
-    predictions_loss = torch.mean([loss(label, pred) for label, pred in zip(image_data, predictions)])
+    # Sort the predictions to match the order of the ground truth data as best as possible
+    predictions = sort_predictions(image_data, predictions)
+    
+    alpha_p = self.config.neuron.alpha_position
+    alpha_t = self.config.neuron.alpha_text
+    alpha_f = self.config.neuron.alpha_font
+    alpha_prediction = self.config.neuron.alpha_prediction
+    alpha_time = self.config.neuron.alpha_time
 
-    # TODO: Use max time to calculate time penalty
-    alpha_time = 1.0
-    time_loss = alpha_time * response.response_time / 10
-    bt.logging.info(f"response_time: {response.response_time}, time_loss: {time_loss}")
+    # Take mean score over all sections in document (note that we don't penalize extra sections)
+    section_rewards = [
+        section_reward(label, pred, verbose=True, alpha_f=alpha_f, alpha_p=alpha_p, alpha_t=alpha_t) 
+        for label, pred in zip(image_data, predictions)
+    ]
+    prediction_reward = torch.mean(torch.FloatTensor([reward['total'] for reward in section_rewards]))
 
-    # convert loss to reward (invert and scale)
-    raw_reward = 1.0 / (predictions_loss + time_loss + 1e-6)
-    # NOTE: Tanh will saturate quickly and so two losses of 0.1 and 0.01 would produce raw_rewards of 10 and 100 which would both have tanh values of effectively 1.0.
-    normalized_reward = torch.tanh(raw_reward)
+    time_reward = max(1 - response.time_elapsed / self.config.neuron.timeout, 0)
+    total_reward = (alpha_prediction * prediction_reward + alpha_time * time_reward) / (alpha_prediction + alpha_time)
 
-    bt.logging.info(f"predictions_loss: {predictions_loss}, raw_reward: {raw_reward}, normalized_reward: {normalized_reward}")
-    return normalized_reward
-
-
+    bt.logging.info(f"prediction_reward: {prediction_reward:.3f}, time_reward: {time_reward:.3f}, total_reward: {total_reward:.3f}")
+    return total_reward
 
 def get_rewards(
     self,
@@ -115,5 +215,5 @@ def get_rewards(
     """
     # Get all the reward results by iteratively calling your reward() function.
     return torch.FloatTensor(
-        [reward(image_data, response) for response in responses]
+        [reward(self, image_data, response) for response in responses]
     ).to(self.device)

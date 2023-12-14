@@ -3,6 +3,7 @@ torch
 pytesseract
 pandas
 faker
+scipy
 Pillow
 PyMuPDF
 reportlab

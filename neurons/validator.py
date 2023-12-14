@@ -48,16 +48,46 @@ class Validator(BaseValidatorNeuron):
 
     async def forward(self):
         """
-        Validator forward pass. Consists of:
-        - Generating the query
-        - Querying the miners
-        - Getting the responses
-        - Rewarding the miners
-        - Updating the scores
-        """
-        # TODO(developer): Rewrite this function based on your protocol definition.
-        return await forward(self)
+        The forward function is called by the validator every time step.
 
+        It consists of 3 important steps:
+        - Generate a challenge for the miners (in this case it creates a synthetic invoice image)
+        - Query the miners with the challenge
+        - Score the responses from the miners
+
+        """
+
+        # get_random_uids is an example method, but you can replace it with your own.
+        miner_uids = get_random_uids(self, k=self.config.neuron.sample_size)
+
+        # Create a random image and load it.
+        image_data, image_path = generate_image(corrupt=True)
+        image = load_image(image_path)
+
+        # Create synapse object to send to the miner and attach the image.
+        # convert PIL image into a json serializable format
+        synapse = OCRSynapse(base64_image = serialize_image(image))
+
+        # The dendrite client queries the network.
+        responses = self.dendrite.query(
+            # Send the query to selected miner axons in the network.
+            axons=[self.metagraph.axons[uid] for uid in miner_uids],
+            # Pass the synapse to the miner.
+            synapse=synapse,
+            # Do not deserialize the response so that we have access to the raw response.
+            deserialize=False,
+        )
+
+        # Log the results for monitoring purposes.
+        bt.logging.info(f"Received responses: {responses}")
+
+        rewards = get_rewards(self, image_data=image_data, responses=responses)
+
+        bt.logging.info(f"Scored responses: {rewards}")
+        # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
+        self.update_scores(rewards, miner_uids)
+
+        # TODO: return an event which can be logged by the validator.
 
 # The main function parses the configuration and runs the validator.
 if __name__ == "__main__":

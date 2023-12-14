@@ -112,4 +112,3 @@ async def forward(self):
     self.update_scores(rewards, miner_uids)
 
     # TODO: return an event which can be logged by the validator.
-    # return event#

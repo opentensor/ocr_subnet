@@ -3,6 +3,8 @@ torch
 pytesseract
 pandas
 faker
+Pillow
+PyMuPDF
 reportlab
 pdf2image
 editdistance

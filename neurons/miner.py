@@ -1,7 +1,5 @@
 # The MIT License (MIT)
 # Copyright © 2023 Yuma Rao
-# TODO(developer): Set your name
-# Copyright © 2023 <your name>
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
@@ -22,10 +20,8 @@ import typing
 import bittensor as bt
 import pytesseract
 
-# Bittensor Miner Template:
+# Bittensor OCR Miner
 import ocr_subnet
-
-from ocr_subnet.utils.serialize import deserialize_image
 
 # import base miner class which takes care of most of the boilerplate
 from ocr_subnet.base.miner import BaseMinerNeuron
@@ -33,7 +29,7 @@ from ocr_subnet.base.miner import BaseMinerNeuron
 
 class Miner(BaseMinerNeuron):
     """
-    Your miner neuron class. You should use this class to define your miner's behavior. In particular, you should replace the forward function with your own logic. You may also want to override the blacklist and priority functions according to your needs.
+    OCR miner neuron class. You may also want to override the blacklist and priority functions according to your needs.
 
     This class inherits from the BaseMinerNeuron class, which in turn inherits from BaseNeuron. The BaseNeuron class takes care of routine tasks such as setting up wallet, subtensor, metagraph, logging directory, parsing config, etc. You can override any of the methods in BaseNeuron if you need to customize the behavior.
 
@@ -44,6 +40,7 @@ class Miner(BaseMinerNeuron):
         super(Miner, self).__init__(config=config)
 
         # TODO(developer): Anything specific to your use case you can do here
+
 
     async def forward(
         self, synapse: ocr_subnet.protocol.OCRSynapse
@@ -58,26 +55,34 @@ class Miner(BaseMinerNeuron):
             ocr_subnet.protocol.OCRSynapse: The synapse object with the 'response' field set to the extracted data.
 
         """
+        # Get image data
+        image = ocr_subnet.utils.image.deserialize(base64_string=synapse.base64_image)
 
-        image = deserialize_image(base64_string=synapse.base64_image)
         # Use pytesseract to get the data
         data = pytesseract.image_to_data(image, output_type=pytesseract.Output.DICT)
 
         response = []
-        # Loop over each item in the 'text' part of the data
         for i in range(len(data['text'])):
             if data['text'][i].strip() != '':  # This filters out empty text results
                 x1, y1, width, height = data['left'][i], data['top'][i], data['width'][i], data['height'][i]
+                if width * height < 10:  # This filters out small boxes (likely noise)
+                    continue
+
                 x2, y2 = x1 + width, y1 + height
 
                 # Here we don't have font information, so we'll omit that.
                 # Pytesseract does not extract font family or size information.
                 entry = {
-                    'index': i,
                     'position': [x1, y1, x2, y2],
                     'text': data['text'][i]
                 }
                 response.append(entry)
+
+        # Merge together words into sections, which are on the same line (same y value) and are close together (small distance in x)
+        response = ocr_subnet.utils.process.group_and_merge_boxes(response)
+
+        # Sort sections by y, then sort by x so that they read left to right and top to bottom
+        response = sorted(response, key=lambda item: (item['position'][1], item['position'][0]))
 
         # Attach response to synapse and return it.
         synapse.response = response

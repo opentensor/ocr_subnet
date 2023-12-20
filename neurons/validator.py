@@ -1,7 +1,5 @@
 # The MIT License (MIT)
 # Copyright © 2023 Yuma Rao
-# TODO(developer): Set your name
-# Copyright © 2023 <your name>
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
@@ -17,13 +15,12 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-
+import os
 import time
-
-# Bittensor
+import hashlib
 import bittensor as bt
 
-from ocr_subnet.validator import forward
+import ocr_subnet
 
 # import base validator class which takes care of most of the boilerplate
 from ocr_subnet.base.validator import BaseValidatorNeuron
@@ -31,7 +28,7 @@ from ocr_subnet.base.validator import BaseValidatorNeuron
 
 class Validator(BaseValidatorNeuron):
     """
-    Your validator neuron class. You should use this class to define your validator's behavior. In particular, you should replace the forward function with your own logic.
+    OCR validator neuron class.
 
     This class inherits from the BaseValidatorNeuron class, which in turn inherits from BaseNeuron. The BaseNeuron class takes care of routine tasks such as setting up wallet, subtensor, metagraph, logging directory, parsing config, etc. You can override any of the methods in BaseNeuron if you need to customize the behavior.
 
@@ -44,19 +41,56 @@ class Validator(BaseValidatorNeuron):
         bt.logging.info("load_state()")
         self.load_state()
 
-        # TODO(developer): Anything specific to your use case you can do here
+        self.image_dir = './data/images/'
+        if not os.path.exists(self.image_dir):
+            os.makedirs(self.image_dir)
+
 
     async def forward(self):
         """
-        Validator forward pass. Consists of:
-        - Generating the query
-        - Querying the miners
-        - Getting the responses
-        - Rewarding the miners
-        - Updating the scores
+        The forward function is called by the validator every time step.
+
+        It consists of 3 important steps:
+        - Generate a challenge for the miners (in this case it creates a synthetic invoice image)
+        - Query the miners with the challenge
+        - Score the responses from the miners
+
+        Args:
+            self (:obj:`bittensor.neuron.Neuron`): The neuron object which contains all the necessary state for the validator.
+
         """
-        # TODO(developer): Rewrite this function based on your protocol definition.
-        return await forward(self)
+
+        # get_random_uids is an example method, but you can replace it with your own.
+        miner_uids = ocr_subnet.utils.uids.get_random_uids(self, k=self.config.neuron.sample_size)
+
+        # make a hash from the timestamp
+        filename = hashlib.md5(str(time.time()).encode()).hexdigest()
+
+        # Create a random image and load it.
+        image_data = ocr_subnet.validator.generate.invoice(path=os.path.join(self.image_dir, f"{filename}.pdf"), corrupt=True)
+
+        # Create synapse object to send to the miner and attach the image.
+        synapse = ocr_subnet.protocol.OCRSynapse(base64_image = image_data['base64_image'])
+
+        # The dendrite client queries the network.
+        responses = self.dendrite.query(
+            # Send the query to selected miner axons in the network.
+            axons=[self.metagraph.axons[uid] for uid in miner_uids],
+            # Pass the synapse to the miner.
+            synapse=synapse,
+            # Do not deserialize the response so that we have access to the raw response.
+            deserialize=False,
+        )
+
+        # Log the results for monitoring purposes.
+        bt.logging.info(f"Received responses: {responses}")
+
+        rewards = ocr_subnet.validator.reward.get_rewards(self, labels=image_data['labels'], responses=responses)
+
+        bt.logging.info(f"Scored responses: {rewards}")
+
+        # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
+        self.update_scores(rewards, miner_uids)
 
 
 # The main function parses the configuration and runs the validator.

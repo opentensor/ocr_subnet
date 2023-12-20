@@ -1,41 +1,85 @@
-import os
+# The MIT License (MIT)
+# Copyright © 2023 Yuma Rao
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+# documentation files (the “Software”), to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+# and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in all copies or substantial portions of
+# the Software.
+
+# THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+# THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+# DEALINGS IN THE SOFTWARE.
+
 import datetime
 import random
+
+from typing import List
+
 from faker import Faker
+
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+from reportlab.pdfbase import pdfmetrics
 
+from ocr_subnet.validator.corrupt import corrupt_image
+from ocr_subnet.utils.image import load, serialize
 
+seed = 0
+fake = Faker()
+# Seed the Faker instance
+fake.seed_instance(seed)
 
-def apply_invoice_template(invoice_data, filename):
-    c = canvas.Canvas(filename, pagesize=letter)
+# set random seed
+random.seed(seed)
+
+def apply_invoice_template(invoice_data: dict, path: str) -> List[dict]:
+    """
+    Generates an invoice from raw data and saves as pdf
+
+    Args:
+    - invoice_data (dict): contents of invoice
+    - path (str): path to save pdf file
+
+    Returns:
+    - List[dict]: contents of invoice with text, position and font information for each section
+    """
+
+    c = canvas.Canvas(path, pagesize=letter)
     w, h = c._pagesize
-    print(w,h)
     c.setLineWidth(.3)
-    font = {'family': 'Helvetica', 'size': 12}
-    units = font.get('size')
-    c.setFont(font.get('family'), units)
+
+    font_name = random.choice(['Helvetica','Times-Roman'])
+    font_size = random.choice([10, 11, 12])
+    c.setFont(font_name, font_size)
 
     data = []
     def write_text(x, y, text):
         c.drawString(x, y, text)
         # scale x and y by the page size and estimate bounding box based on font size
         # position = [x0, y0, x1, y1]
+        text_width = pdfmetrics.stringWidth(text, font_name, font_size)
         position = [
             x/w,
-            1 - (y - 0.2*units)/h,
-            (x + (2 + len(text)) * 0.5*units)/w,
-            1 - (y + 1.2*units)/h
+            1 - (y - 0.2*font_size)/h,
+            (x + text_width)/w,
+            1 - (y + 0.8*font_size)/h
         ]
 
-        data.append({'position': position, 'text': text, 'font': font})
+        data.append({'position': position, 'text': text, 'font': {'family': font_name, 'size': font_size}})
 
     # Draw the invoice header
     write_text(30, 750, invoice_data['company_name'])
-    write_text(30, 735, invoice_data['company_address'])
-    write_text(30, 720, invoice_data['company_city_zip'])
+
     write_text(400, 750, "Invoice Date: " + invoice_data['invoice_date'])
     write_text(400, 735, "Invoice #: " + invoice_data['invoice_number'])
+
+    write_text(30, 735, invoice_data['company_address'])
+    write_text(30, 720, invoice_data['company_city_zip'])
 
     # Draw the bill to section
     write_text(30, 690, "Bill To:")
@@ -68,7 +112,17 @@ def apply_invoice_template(invoice_data, filename):
     return data
 
 
-def create_invoice(root_dir):
+def invoice(path: str, n_items: int=None, corrupt: bool=True) -> dict:
+    """Create a synthetic invoice and save as pdf
+
+    Args:
+        path (str): Path to save invoice document.
+        n_items (int): Number of items in document. Defaults to None.
+        corrupt (bool): Make the document harder to parse by adding noise etc.
+
+    Returns:
+        _type_: _description_
+    """
 
     items_list = [
         {"desc": "Web hosting", "cost": 100.00},
@@ -90,12 +144,12 @@ def create_invoice(root_dir):
         {"desc": "Logo design", "cost": 140.00},
         {"desc": "Branding", "cost": 750.00},
     ]
+    if n_items is None:
+        n_items = random.randint(8, len(items_list))
 
     def random_items(n):
         items = sorted(random.sample(items_list, k=n), key=lambda x: x['desc'])
         return [{**item, 'qty':random.randint(1,5)} for item in items]
-
-    fake = Faker()
 
     # Sample data for the invoice
     invoice_info = {
@@ -106,15 +160,18 @@ def create_invoice(root_dir):
         "customer_name": fake.name(),
         "invoice_date": datetime.date.fromtimestamp(1700176424-random.random()*5e8).strftime("%B %d, %Y"),
         "invoice_number": f"INV{random.randint(1,10000):06}",
-        "items": random_items(random.randint(3,15)),
-        "terms": "Payment due within 30 days"
+        "items": random_items(n_items),
+        "terms": f"Payment due within {random.choice([7, 14, 30, 60, 90])} days"
     }
 
-    # make a random hash for the filename
-    filename = f"{fake.sha256()}.pdf"
-    path = os.path.join(root_dir, filename)
-    
     # Use the function and pass the data and the filename you want to save as
     data = apply_invoice_template(invoice_info, path)
 
-    return data, path
+    # overwrite image file with corrupted version
+    if corrupt:
+        corrupt_image(path, path)
+
+    image = load(path)
+    base64_image = serialize(image)
+
+    return {'image':image, 'labels':data, 'path':path, 'base64_image': base64_image}

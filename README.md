@@ -86,7 +86,7 @@ Before you proceed with the installation of the subnet, note the following:
 - `neurons/miner.py`: Use `pytesseract` for OCR, and use `OCRSynapse` to communicate with validator
 
 ### Remaining changes to be done
-In addition to the above files, we would also update the following files:
+In addition to the above files, we have also updated the following files:
 - `README.md`: This file contains the documentation for your project. Update this file to reflect your project's documentation.
 - `CONTRIBUTING.md`: This file contains the instructions for contributing to your project. Update this file to reflect your project's contribution guidelines.
 - `template/__init__.py`: This file contains the version of your project.

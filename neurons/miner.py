@@ -39,7 +39,8 @@ class Miner(BaseMinerNeuron):
     def __init__(self, config=None):
         super(Miner, self).__init__(config=config)
 
-        # TODO(developer): Anything specific to your use case you can do here
+        bt.logging.info(f'Miner running tesseract: {pytesseract.get_tesseract_version()} and pytesseract version: {pytesseract.get_version()}')
+
 
 
     async def forward(

@@ -114,12 +114,12 @@ def section_reward(label: dict, pred: dict, alpha_p=1.0, alpha_f=1.0, alpha_t=1.
 
     return reward
 
-def sort_predictions(image_data: List[dict], predictions: List[dict], draw=False) -> List[dict]:
+def sort_predictions(labels: List[dict], predictions: List[dict], draw=False) -> List[dict]:
     """
     Sort the predictions to match the order of the ground truth data using the Hungarian algorithm.
 
     Args:
-    - image_data (list): The ground truth data for the image.
+    - labels (list): The ground truth data for the image.
     - predictions (list): The predicted data for the image.
 
     Returns:
@@ -127,41 +127,27 @@ def sort_predictions(image_data: List[dict], predictions: List[dict], draw=False
     """
 
     # First, make sure that the predictions is at least as long as the image data
-    predictions += [{}] * (len(image_data) - len(predictions))
-    r = torch.zeros((len(image_data), len(predictions)))
+    predictions += [{}] * (len(labels) - len(predictions))
+    r = torch.zeros((len(labels), len(predictions)))
     for i in range(r.shape[0]):
         for j in range(r.shape[1]):
-            r[i,j] = section_reward(image_data[i], predictions[j])['total']
+            r[i,j] = section_reward(labels[i], predictions[j])['total']
 
     # Use the Hungarian algorithm to find the best assignment
     row_indices, col_indices = linear_sum_assignment(r, maximize=True)
-
-    if draw:
-        fig = px.imshow(r.detach().numpy(),
-                    color_continuous_scale='Blues',
-                    title=f'Optimal Assignment (Avg. Reward: {r[row_indices, col_indices].mean():.3f})',
-                    width=600, height=600
-                    )
-        fig.update_layout(coloraxis_showscale=False)
-        fig.update_yaxes(title_text='Ground Truth')
-        fig.update_xaxes(title_text='Predictions')
-
-        for i, j in zip(row_indices, col_indices):
-            fig.add_annotation(x=j, y=i, text='+', showarrow=False, font=dict(color='red', size=16))
-        fig.show()
 
     sorted_predictions = [predictions[i] for i in col_indices]
 
     return sorted_predictions
 
 
-def reward(self, image_data: List[dict], response: OCRSynapse) -> float:
+def reward(self, labels: List[dict], response: OCRSynapse) -> float:
     """
     Reward the miner response to the OCR request. This method returns a reward
     value for the miner, which is used to update the miner's score.
 
     Args:
-    - image (List[dict]): The true data underlying the image sent to the miner.
+    - labels (List[dict]): The true data underlying the image sent to the miner.
     - response (OCRSynapse): Response from the miner.
 
     The expected fields in each section of the response are:
@@ -177,8 +163,8 @@ def reward(self, image_data: List[dict], response: OCRSynapse) -> float:
         return 0.0
 
     # Sort the predictions to match the order of the ground truth data as best as possible
-    predictions = sort_predictions(image_data, predictions)
-    
+    predictions = sort_predictions(labels, predictions)
+
     alpha_p = self.config.neuron.alpha_position
     alpha_t = self.config.neuron.alpha_text
     alpha_f = self.config.neuron.alpha_font
@@ -187,8 +173,8 @@ def reward(self, image_data: List[dict], response: OCRSynapse) -> float:
 
     # Take mean score over all sections in document (note that we don't penalize extra sections)
     section_rewards = [
-        section_reward(label, pred, verbose=True, alpha_f=alpha_f, alpha_p=alpha_p, alpha_t=alpha_t) 
-        for label, pred in zip(image_data, predictions)
+        section_reward(label, pred, verbose=True, alpha_f=alpha_f, alpha_p=alpha_p, alpha_t=alpha_t)
+        for label, pred in zip(labels, predictions)
     ]
     prediction_reward = torch.mean(torch.FloatTensor([reward['total'] for reward in section_rewards]))
 
@@ -200,7 +186,7 @@ def reward(self, image_data: List[dict], response: OCRSynapse) -> float:
 
 def get_rewards(
     self,
-    image_data: List[dict],
+    labels: List[dict],
     responses: List[OCRSynapse],
 ) -> torch.FloatTensor:
     """
@@ -215,5 +201,5 @@ def get_rewards(
     """
     # Get all the reward results by iteratively calling your reward() function.
     return torch.FloatTensor(
-        [reward(self, image_data, response) for response in responses]
+        [reward(self, labels, response) for response in responses]
     ).to(self.device)

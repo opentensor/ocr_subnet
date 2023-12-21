@@ -39,7 +39,8 @@ class Miner(BaseMinerNeuron):
     def __init__(self, config=None):
         super(Miner, self).__init__(config=config)
 
-        bt.logging.info(f'Miner running tesseract: {pytesseract.get_tesseract_version()} and pytesseract version: {pytesseract.get_version()}')
+        bt.logging.info(f'pytesseract version: {pytesseract.__version__}')
+        bt.logging.info(f'tesseract version: {pytesseract.get_tesseract_version()}')
 
 
 
@@ -50,7 +51,7 @@ class Miner(BaseMinerNeuron):
         Processes the incoming OCR synapse and attaches the response to the synapse.
 
         Args:
-            synapse (ocr_subnet.protocol.OCRSynapse): The synapse object containing the image data.
+            synapse (ocr_subnet.protocol.OCRSynapse): The synapse object containing the image data. 
 
         Returns:
             ocr_subnet.protocol.OCRSynapse: The synapse object with the 'response' field set to the extracted data.

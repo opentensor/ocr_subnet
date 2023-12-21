@@ -61,7 +61,7 @@ class Validator(BaseValidatorNeuron):
         """
 
         # get_random_uids is an example method, but you can replace it with your own.
-        miner_uids = ocr_subnet.utils.uids.get_random_uids(self, k=self.config.neuron.sample_size)
+        miner_uids = ocr_subnet.utils.uids.get_random_uids(self, k=min(self.config.neuron.sample_size, self.metagraph.n.item()))
 
         # make a hash from the timestamp
         filename = hashlib.md5(str(time.time()).encode()).hexdigest()

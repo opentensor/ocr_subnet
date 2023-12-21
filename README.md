@@ -27,7 +27,7 @@
 
 ## Subnet quickstarter
 
-This repo shows how you can quickstart creating a Bittensor subnet. This is a companion repo for the [OCR Subnet Tutorial]().
+This repo shows how you can quickstart creating a Bittensor subnet. This is a companion repo for the [OCR Subnet Tutorial](https://docs.bittensor.com/tutorials/ocr-subnet-tutorial).
 
 In specific, this repo demonstrates the power of:
 
@@ -65,7 +65,7 @@ Each subnet consists of:
 
 ## Cloning the Bittensor Subnet Template
 
-Read the [OCR Subnet Tutorial]() first. Then follow the below steps when you are ready to create your own OCR Subnet repo.
+Read the [OCR Subnet Tutorial](https://docs.bittensor.com/tutorials/ocr-subnet-tutorial) first. Then follow the below steps when you are ready to create your own OCR Subnet repo.
 
 1. Go to [Bittensor Subnet Template](https://github.com/opentensor/bittensor-subnet-template) and click on the **Use this template** dropdown on the top right. 
 2. Click on **Create a new repository** and give your preferred name in the **Repository name** field. We will use the name **ocr_subnet** in this tutorial. 
@@ -81,7 +81,7 @@ Read the [OCR Subnet Tutorial]() first. Then follow the below steps when you are
 
 ### Before you proceed
 
-Now we begin to incorporate our Python notebook code into this repo. At this stage we strongly recommend that you first go over the validated code in the Python notebook as presented in the [OCR Subnet Tutorial](). Familiarize yourself with the code flow in the notebook before proceeding further.
+Now we begin to incorporate our Python notebook code into this repo. At this stage we strongly recommend that you first go over the validated code in the Python notebook as presented in the [OCR Subnet Tutorial](https://docs.bittensor.com/tutorials/ocr-subnet-tutorial). Familiarize yourself with the code flow in the notebook before proceeding further.
 
 ### Changing the code and filenames in this repo
 
@@ -111,7 +111,7 @@ In addition, make a note to update the following files:
 
 ### Code from notebook 
 
-Next, copy the code from the Python notebook into specific sections of this repo. Follow Steps 1 through 3 of [OCR Subnet Tutorial]() and copy the code from the linked Python notebook into this repo. 
+Next, copy the code from the Python notebook into specific sections of this repo. Follow Steps 1 through 3 of [OCR Subnet Tutorial](https://docs.bittensor.com/tutorials/ocr-subnet-tutorial) and copy the code from the linked Python notebook into this repo. 
 
 
 ## Preparing to run the OCR subnet

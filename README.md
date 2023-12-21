@@ -1,6 +1,6 @@
 <div align="center">
 
-# **Bittensor Subnet Template** <!-- omit in toc -->
+# **OCR Subnet Template** <!-- omit in toc -->
 [![Discord Chat](https://img.shields.io/discord/308323056592486420.svg)](https://discord.gg/bittensor)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
 
@@ -12,28 +12,41 @@
 </div>
 
 ---
-- [Quickstarter template](#quickstarter-template)
-- [Introduction](#introduction)
-  - [Example](#example)
-- [Installation](#installation)
+- [Subnet quickstarter](#subnet-quickstarter)
+- [Introduction to subnets (Optional)](#introduction-to-subnets-optional)
+- [Cloning the Bittensor Subnet Template](#cloning-the-bittensor-subnet-template)
+- [Incorporating Python notebook code](#incorporating-python-notebook-code)
   - [Before you proceed](#before-you-proceed)
-  - [Install](#install)
-- [Writing your own incentive mechanism](#writing-your-own-incentive-mechanism)
+  - [Changing the code and filenames in this repo](#changing-the-code-and-filenames-in-this-repo)
+  - [Code from notebook](#code-from-notebook)
+- [Preparing to run the OCR subnet](#preparing-to-run-the-ocr-subnet)
+- [Running the OCR subnet](#running-the-ocr-subnet)
 - [License](#license)
 
 ---
-## Quickstarter template
 
-This template contains all the required installation instructions, scripts, and files and functions for:
-- Building Bittensor subnets.
-- Creating custom incentive mechanisms and running these mechanisms on the subnets. 
+## Subnet quickstarter
 
-In order to simplify the building of subnets, this template abstracts away the complexity of the underlying blockchain and other boilerplate code. While the default behavior of the template is sufficient for a simple subnet, you should customize the template in order to meet your specific requirements.
+This repo shows how you can quickstart creating a Bittensor subnet. This is a companion repo for the [OCR Subnet Tutorial]().
+
+In specific, this repo demonstrates the power of:
+
+- Starting from your Python notebook that contains the validated code for your incentive mechanism (in this case, the OCR), and
+- Incorporating the Python notebook code into the [Bittensor Subnet Template](https://github.com/opentensor/bittensor-subnet-template) to quickly build a Bittensor subnet.
+
+**Start with the template**
+
+The Bittensor Subnet Template abstracts away the underlying complexity of Bittensor API, the underlying blockchain and other boilerplate code. The Bittensor Subnet Template also contains the required installation instructions, scripts, and files and functions for building Bittensor subnets with custom incentive mechanisms. 
+
+**Incorporate Python notebook code**
+
+In this repo we incorporate a custom incentive mechanism called **Optical Character Recognition (OCR)**. The Bittensor document [OCR Subnet Tutorial]() contains an introduction to the OCR subnet, links to the Python notebook and the detailed instructions for integrating the notebook code into this repo. 
+
 ---
 
-## Introduction
+## Introduction to subnets (Optional)
 
-**IMPORTANT**: If you are new to Bittensor subnets, read this section before proceeding to [Installation](#installation) section. 
+**You can skip this section if you** are already familiar with Bittensor subnets. 
 
 The Bittensor blockchain hosts multiple self-contained incentive mechanisms called **subnets**. Subnets are playing fields in which:
 - Subnet miners who produce value, and
@@ -44,23 +57,66 @@ determine together the proper distribution of TAO for the purpose of incentivizi
 Each subnet consists of:
 - Subnet miners and subnet validators.
 - A protocol using which the subnet miners and subnet validators interact with one another. This protocol is part of the incentive mechanism.
-- The Bittensor API using which the subnet miners and subnet validators interact with Bittensor's onchain consensus engine [Yuma Consensus](https://bittensor.com/documentation/validating/yuma-consensus). The Yuma Consensus is designed to drive these actors: subnet validators and subnet miners, into agreement on who is creating value and what that value is worth. 
+- The Bittensor API using which the subnet miners and subnet validators interact with Bittensor's onchain consensus engine Yuma Consensus. The Yuma Consensus is designed to drive subnet validators and subnet miners into agreement on who is creating value and what that value is worth. 
 
-This starter template is split into three primary files. To write your own incentive mechanism, you should edit these files. These files are:
+**ALSO SEE**
+
+- [Introduction](https://docs.bittensor.com/learn/introduction).
+
+## Cloning the Bittensor Subnet Template
+
+Read the [OCR Subnet Tutorial]() first. Then follow the below steps when you are ready to create your own OCR Subnet repo.
+
+1. Go to [Bittensor Subnet Template](https://github.com/opentensor/bittensor-subnet-template) and click on the **Use this template** dropdown on the top right. 
+2. Click on **Create a new repository** and give your preferred name in the **Repository name** field. We will use the name **ocr_subnet** in this tutorial. 
+3. Optionally provide a description in the **Description** field. 
+4. Choose either **Public** or **Private**.
+5. Click on **Create repository**.
+6. GitHub will now show you your **ocr_subnet** repository page. 
+7. Clone your **ocr_subnet** repo locally.
+
+---
+
+## Incorporating Python notebook code
+
+### Before you proceed
+
+Now we begin to incorporate our Python notebook code into this repo. At this stage we strongly recommend that you first go over the validated code in the Python notebook as presented in the [OCR Subnet Tutorial](). Familiarize yourself with the code flow in the notebook before proceeding further.
+
+### Changing the code and filenames in this repo
+
+As described in [this section of Bittensor Subnet Template](https://github.com/opentensor/bittensor-subnet-template?tab=readme-ov-file#introduction), to write our own incentive mechanism, we must edit the below files in this cloned OCR subnet repo:
+
 1. `template/protocol.py`: Contains the definition of the protocol used by subnet miners and subnet validators.
 2. `neurons/miner.py`: Script that defines the subnet miner's behavior, i.e., how the subnet miner responds to requests from subnet validators.
 3. `neurons/validator.py`: This script defines the subnet validator's behavior, i.e., how the subnet validator requests information from the subnet miners and determines the scores.
 
-### Example
+Below we show the changes we made to this OCR subnet repo. You can use your preferred names, but ensure that your code is consistent with the names you use.
 
-The Bittensor Subnet 1 for Text Prompting is built using this template. See [Bittensor Text-Prompting](https://github.com/opentensor/text-prompting) for how to configure the files and how to add monitoring and telemetry and support multiple miner types. Also see this Subnet 1 in action on [Taostats](https://taostats.io/subnets/netuid-1/) explorer.
+- Renamed `/template` to `/ocr_subnet`.
+- `ocr_subnet/protocol.py`: Renamed the synapse to `OCRSynapse` and provided the necessary attributes to communication between miner and validator.
+- `ocr_subnet/forward.py`: Included the synthetic data generation (invoice pdf) and used `OCRSynapse`. 
+- `ocr_subnet/reward.py`: Added custom loss function to calculate the reward.
+- `neurons/miner.py`: Used `pytesseract` for OCR, and used `OCRSynapse` to communicate with validator.
+
+**Additional changes**
+
+In addition, make a note to update the following files:
+- `README.md`: This file contains the documentation for the OCR project. 
+- `contrib/CONTRIBUTING.md` and other files in `contrib`: Contains the instructions for contributing to your project. Update this file and the directory to reflect your project's contribution guidelines.
+- `ocr_subnet/__init__.py`: This file contains the version of your project.
+- `setup.py`: This file contains the metadata about your project. Update this file to reflect your project's metadata.
 
 ---
 
-## Installation
+### Code from notebook 
 
-### Before you proceed
-Before you proceed with the installation of the subnet, note the following: 
+Next, copy the code from the Python notebook into specific sections of this repo. Follow Steps 1 through 3 of [OCR Subnet Tutorial]() and copy the code from the linked Python notebook into this repo. 
+
+
+## Preparing to run the OCR subnet
+
+Before you proceed with the installation and running of the subnet, note the following: 
 
 - Use these instructions to run your subnet locally for your development and testing, or on Bittensor testnet or on Bittensor mainnet. 
 - **IMPORTANT**: We **strongly recommend** that you first run your subnet locally and complete your development and testing before running the subnet on Bittensor testnet. Furthermore, make sure that you next run your subnet on Bittensor testnet before running it on the Bittensor mainnet.
@@ -68,32 +124,13 @@ Before you proceed with the installation of the subnet, note the following:
 - **IMPORTANT:** Make sure you are aware of the minimum compute requirements for your subnet. See the [Minimum compute YAML configuration](./min_compute.yml).
 - Note that installation instructions differ based on your situation: For example, installing for local development and testing will require a few additional steps compared to installing for testnet. Similarly, installation instructions differ for a subnet owner vs a validator or a miner. 
 
-### Install
+## Running the OCR subnet
 
 - **Running locally**: Follow the step-by-step instructions described in this section: [Running Subnet Locally](./docs/running_on_staging.md).
 - **Running on Bittensor testnet**: Follow the step-by-step instructions described in this section: [Running on the Test Network](./docs/running_on_testnet.md).
 - **Running on Bittensor mainnet**: Follow the step-by-step instructions described in this section: [Running on the Main Network](./docs/running_on_mainnet.md).
 
 ---
-
-
-## What we changed to make our repo
-
-- Rename `/template` to `/ocr_subnet`
-- `ocr_subnet/protocol.py`: Rename the synapse to `OCRSynapse` and provide the necessary attributes to communication between miner and validator
-- `ocr_subnet/forward.py`: Included the synthetic data generation (invoice pdf), used `OCRSynapse`. 
-- `ocr_subnet/reward.py`: Added custom loss function to calculate the reward
-- `neurons/miner.py`: Use `pytesseract` for OCR, and use `OCRSynapse` to communicate with validator
-
-### Remaining changes to be done
-In addition to the above files, we have also updated the following files:
-- `README.md`: This file contains the documentation for your project. Update this file to reflect your project's documentation.
-- `CONTRIBUTING.md`: This file contains the instructions for contributing to your project. Update this file to reflect your project's contribution guidelines.
-- `template/__init__.py`: This file contains the version of your project.
-- `setup.py`: This file contains the metadata about your project. Update this file to reflect your project's metadata.
-
-
-
 
 ## License
 This repository is licensed under the MIT License.

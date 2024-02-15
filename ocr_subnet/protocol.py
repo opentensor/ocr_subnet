@@ -22,12 +22,15 @@ from typing import Optional, List
 class OCRSynapse(bt.Synapse):
     """
     A simple OCR synapse protocol representation which uses bt.Synapse as its base.
-    This protocol enables communication betweenthe miner and the validator.
+    This protocol enables communication between the miner and the validator.
 
     Attributes:
     - base64_image: Base64 encoding of pdf image to be processed by the miner.
     - response: List[dict] containing data extracted from the image.
     """
+
+    # Used by the validator
+    time_elapsed = 0
 
     # Required request input, filled by sending dendrite caller. It is a base64 encoded string.
     base64_image: str

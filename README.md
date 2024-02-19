@@ -4,6 +4,8 @@
 [![Discord Chat](https://img.shields.io/discord/308323056592486420.svg)](https://discord.gg/bittensor)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
 
+Please find a description of our vision [here](https://docs.bittensor.com/python-api/html/autoapi/bittensor/metagraph/index.html).
+
 ---
 - **IMPORTANT:** Make sure you are aware of the minimum compute requirements for the subnet. See the [Minimum compute YAML configuration](./min_compute.yml).
 - Note that installation instructions differ based on your situation: For example, installing for local development and testing will require a few additional steps compared to installing for testnet. Similarly, installation instructions differ for a validator vs a miner. 

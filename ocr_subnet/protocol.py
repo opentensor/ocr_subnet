@@ -32,7 +32,7 @@ class OCRSynapse(bt.Synapse):
     # Required request input, filled by sending dendrite caller. It is a base64 encoded string.
     base64_image: str
 
-    # Optional request output, filled by recieving axon.
+    # Optional request output, filled by receiving axon.
     response: Optional[List[dict]] = None
 
     def deserialize(self) -> List[dict]:
@@ -43,3 +43,20 @@ class OCRSynapse(bt.Synapse):
         - List[dict]: The deserialized response, which is a list of dictionaries containing the extracted data.
         """
         return self.response
+    
+    class HashSynapse(bt.Synapse):
+
+        # Required request input, filled by sending dendrite caller. It is a base64 encoded string.
+        base64_image: str
+
+        # Optional request output, filled by receiving axon.
+        response: Optional[List[dict]] = None
+
+        def deserialize(self) -> List[dict]:
+            """
+            Deserialize the miner response.
+
+            Returns:
+            - List[dict]: The deserialized response, which is a list of dictionaries containing the extracted data.
+            """
+            return self.response

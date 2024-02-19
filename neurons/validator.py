@@ -45,10 +45,20 @@ class Validator(BaseValidatorNeuron):
         if not os.path.exists(self.image_dir):
             os.makedirs(self.image_dir)
 
+    async def forwardHash(self):
 
-    async def forward(self):
+        #we cannot get random uids here, they need to be persistent for the forward function
+        miner_uids = ocr_subnet.utils.uids.get_random_uids(self, k=min(self.config.neuron.sample_size, self.metagraph.n.item()))
+        hashSynapse = ocr_subnet.protocol.HashSynapse('hash of the prediction for the next epoch')
+
+
+
+
+    async def forward(self, hashResponse):
         """
         The forward function is called by the validator every time step.
+        
+        COMMENT - we want this to happen every tempo / epoch actually not every time step
 
         It consists of 3 important steps:
         - Generate a challenge for the miners (in this case it creates a synthetic invoice image)
@@ -64,13 +74,13 @@ class Validator(BaseValidatorNeuron):
         miner_uids = ocr_subnet.utils.uids.get_random_uids(self, k=min(self.config.neuron.sample_size, self.metagraph.n.item()))
 
         # make a hash from the timestamp
-        filename = hashlib.md5(str(time.time()).encode()).hexdigest()
+        #filename = hashlib.md5(str(time.time()).encode()).hexdigest()
 
         # Create a random image and load it.
-        image_data = ocr_subnet.validator.generate.invoice(path=os.path.join(self.image_dir, f"{filename}.pdf"), corrupt=True)
+        #image_data = ocr_subnet.validator.generate.invoice(path=os.path.join(self.image_dir, f"{filename}.pdf"), corrupt=True)
 
         # Create synapse object to send to the miner and attach the image.
-        synapse = ocr_subnet.protocol.OCRSynapse(base64_image = image_data['base64_image'])
+        synapse = ocr_subnet.protocol.OCRSynapse(base64_image = 'prediction corresponding to the past hash')
 
         # The dendrite client queries the network.
         responses = self.dendrite.query(
@@ -82,10 +92,13 @@ class Validator(BaseValidatorNeuron):
             deserialize=False,
         )
 
+    
+
         # Log the results for monitoring purposes.
         bt.logging.info(f"Received responses: {responses}")
+        bt.logging.info(f"Received responses: {hashResponses}")
 
-        rewards = ocr_subnet.validator.reward.get_rewards(self, labels=image_data['labels'], responses=responses)
+        rewards = ocr_subnet.validator.reward.get_rewards(self, responses=responses)
 
         bt.logging.info(f"Scored responses: {rewards}")
 

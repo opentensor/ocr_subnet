@@ -71,7 +71,7 @@ class Miner(BaseMinerNeuron):
             return synapse
 
     async def blacklist(
-        self, synapse: ocr_subnet.protocol.OCRSynapse
+        self, synapse: ocr_subnet.protocol.HashSynapse
     ) -> typing.Tuple[bool, str]:
         """
         Determines whether an incoming request should be blacklisted and thus ignored. Your implementation should

@@ -115,7 +115,7 @@ class Miner(BaseMinerNeuron):
         )
         return False, "Hotkey recognized!"
 
-    async def priority(self, synapse: ocr_subnet.protocol.OCRSynapse) -> float:
+    async def priority(self, synapse: ocr_subnet.protocol.HashSynapse) -> float:
         """
         The priority function determines the order in which requests are handled. More valuable or higher-priority
         requests are processed before others. You should design your own priority mechanism with care.

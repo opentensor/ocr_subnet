@@ -112,7 +112,7 @@ class Validator(BaseValidatorNeuron):
         bt.logging.info(f"Received responses: {check_responses}")
         self.emissions.sync()
         e = self.emissions.calculate_emission()
-        rewards = ocr_subnet.validator.reward.get_rewards(self, responses=responses, e)
+        rewards = ocr_subnet.validator.reward.get_rewards(self, previous_uids, unhashed, e)
 
         bt.logging.info(f"Scored responses: {rewards}")
 

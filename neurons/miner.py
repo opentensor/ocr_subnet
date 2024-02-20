@@ -67,7 +67,7 @@ class Miner(BaseMinerNeuron):
             synapse.response = predicted_emission
             return synapse
         else:
-            synapse.response = self.prev_emission
+            synapse.insert_tensor(self.prev_emission)
             return synapse
 
     async def blacklist(

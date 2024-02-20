@@ -87,7 +87,7 @@ class Validator(BaseValidatorNeuron):
         self.previous_uids = {}
         for (uid, resp) in zip(miner_uids, responses):
             if resp.response:
-                self.previous_uids[uid] = resp.response
+                self.previous_uids[uid] = resp.response["hash"]
 
         synapse = ocr_subnet.protocol.EmissionSynapse(emission = 'emission tensor corresponding to previously sent hash')
         #synapses = []

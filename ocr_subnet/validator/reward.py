@@ -22,7 +22,7 @@ from typing import List
 
 from scipy.optimize import linear_sum_assignment
 
-from ocr_subnet.protocol import OCRSynapse
+from ocr_subnet.protocol import EmissionSynapse
 from ocr_subnet.protocol import HashSynapse
 from ocr_subnet.protocol import hash_tensor
 

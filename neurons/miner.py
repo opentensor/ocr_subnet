@@ -25,7 +25,7 @@ import ocr_subnet
 
 # import base miner class which takes care of most of the boilerplate
 from ocr_subnet.base.miner import BaseMinerNeuron
-
+from ocr_subnet.validator.reward import EmissionSource
 
 class Miner(BaseMinerNeuron):
     """
@@ -36,6 +36,8 @@ class Miner(BaseMinerNeuron):
     This class provides reasonable default behavior for a miner such as blacklisting unrecognized hotkeys, prioritizing requests based on stake, and forwarding requests to the forward function. If you need to define custom
     """
 
+    prev_emission = None
+
     def __init__(self, config=None):
         super(Miner, self).__init__(config=config)
 
@@ -45,8 +47,8 @@ class Miner(BaseMinerNeuron):
 
 
     async def forward(
-        self, synapse: ocr_subnet.protocol.OCRSynapse
-    ) -> ocr_subnet.protocol.OCRSynapse:
+        self, synapse
+    ):
         """
         Processes the incoming OCR synapse and attaches the response to the synapse.
 
@@ -57,39 +59,16 @@ class Miner(BaseMinerNeuron):
             ocr_subnet.protocol.OCRSynapse: The synapse object with the 'response' field set to the extracted data.
 
         """
-        # Get image data
-        image = ocr_subnet.utils.image.deserialize(base64_string=synapse.base64_image)
+        if synapse.needs_hash:
+            #calculate your prediction here, the default code calculates the current emission
+            predicted_emission = EmissionSource().calculate_emission()
 
-        # Use pytesseract to get the data
-        data = pytesseract.image_to_data(image, output_type=pytesseract.Output.DICT)
-
-        response = []
-        for i in range(len(data['text'])):
-            if data['text'][i].strip() != '':  # This filters out empty text results
-                x1, y1, width, height = data['left'][i], data['top'][i], data['width'][i], data['height'][i]
-                if width * height < 10:  # This filters out small boxes (likely noise)
-                    continue
-
-                x2, y2 = x1 + width, y1 + height
-
-                # Here we don't have font information, so we'll omit that.
-                # Pytesseract does not extract font family or size information.
-                entry = {
-                    'position': [x1, y1, x2, y2],
-                    'text': data['text'][i]
-                }
-                response.append(entry)
-
-        # Merge together words into sections, which are on the same line (same y value) and are close together (small distance in x)
-        response = ocr_subnet.utils.process.group_and_merge_boxes(response)
-
-        # Sort sections by y, then sort by x so that they read left to right and top to bottom
-        response = sorted(response, key=lambda item: (item['position'][1], item['position'][0]))
-
-        # Attach response to synapse and return it.
-        synapse.response = response
-
-        return synapse
+            self.prev_emission = predicted_emission
+            synapse.response = predicted_emission
+            return synapse
+        else:
+            synapse.response = self.prev_emission
+            return synapse
 
     async def blacklist(
         self, synapse: ocr_subnet.protocol.OCRSynapse

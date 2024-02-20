@@ -56,10 +56,10 @@ class EmissionSynapse(bt.Synapse):
     base64_image: str
 
     # Optional request output, filled by receiving axon.
-    response: Optional[FloatTensor] = None
+    response: Optional[dict] = None
 
-    def insert_tensor(self, emission):
-        self.response = hash_tensor(emission)
+    def insert_tensor(self, emission: FloatTensor):
+        self.response = {"hash": hash_tensor(emission)}
 
     def deserialize(self) -> str:
         """

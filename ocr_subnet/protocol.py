@@ -18,22 +18,25 @@
 
 import bittensor as bt
 from typing import Optional, List
+import struct
+import hashlib
+import base64
 
-class OCRSynapse(bt.Synapse):
-    """
-    A simple OCR synapse protocol representation which uses bt.Synapse as its base.
-    This protocol enables communication betweenthe miner and the validator.
+def hash_tensor(emission):
+    bytes = []
+    for f in emission:
+        bytes.extend(struct.pack("f",f))
+    return base64.decode(bytes)
 
-    Attributes:
-    - base64_image: Base64 encoding of pdf image to be processed by the miner.
-    - response: List[dict] containing data extracted from the image.
-    """
+class HashSynapse(bt.Synapse):
+    needs_hash = True
+    needs_tensor = False
 
     # Required request input, filled by sending dendrite caller. It is a base64 encoded string.
-    base64_image: str
+    next_emission_hash: str
 
-    # Optional request output, filled by receiving axon.
-    response: Optional[List[dict]] = None
+    # Emission tensor corresponding to the previously submitted hash
+    response = None
 
     def deserialize(self) -> List[dict]:
         """
@@ -44,19 +47,24 @@ class OCRSynapse(bt.Synapse):
         """
         return self.response
     
-    class HashSynapse(bt.Synapse):
+class EmissionSynapse(bt.Synapse):
+    needs_hash = False
+    needs_tensor = True
 
-        # Required request input, filled by sending dendrite caller. It is a base64 encoded string.
-        base64_image: str
+    # Required request input, filled by sending dendrite caller. It is a base64 encoded string.
+    base64_image: str
 
-        # Optional request output, filled by receiving axon.
-        response: Optional[List[dict]] = None
+    # Optional request output, filled by receiving axon.
+    response: Optional[str] = None
 
-        def deserialize(self) -> List[dict]:
-            """
-            Deserialize the miner response.
+    def insert_tensor(self, emission):
+        self.response = hash_tensor(emission)
 
-            Returns:
-            - List[dict]: The deserialized response, which is a list of dictionaries containing the extracted data.
-            """
-            return self.response
+    def deserialize(self) -> str:
+        """
+        Deserialize the miner response.
+
+        Returns:
+        - List[dict]: The deserialized response, which is a list of dictionaries containing the extracted data.
+        """
+        return self.response

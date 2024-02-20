@@ -24,37 +24,51 @@ from scipy.optimize import linear_sum_assignment
 
 from ocr_subnet.protocol import OCRSynapse
 from ocr_subnet.protocol import HashSynapse
+from ocr_subnet.protocol import hash_tensor
 
-metagraph = bt.metagraph(netuid=0, lite=False)
-W=metagraph.W.float()
-Sn = (metagraph.S/metagraph.S.sum()).clone().float()
+class EmissionSource:
+    def __init__(self):
+        self.metagraph = bt.metagraph.metagraph(netuid=0, lite=False, sync=False)
+        self.emission = None
 
-def trust(W, S, threshold=0):
-    """Trust vector for subnets with variable threshold"""
-    Wn = (W > threshold).float()
-    return Wn.T @ S
-    
-T = trust(W,Sn)
+    def sync(self):
+        self.metagraph.sync()
+        self.emission = None
 
-def rank(W, S):
-    """Rank vector for subnets"""
-    R = W.T @ S
-    return R / R.sum()
-    
-R = rank(W,Sn)
+    def calculate_emission():
+        if self.emission:
+            return self.emission
+        W=self.metagraph.W.float()
+        Sn = (metagraph.S/metagraph.S.sum()).clone().float()
 
-def consensus(T, kappa=0.5, rho=10):
-    """Yuma Consensus 1"""
-    return torch.sigmoid( rho * (T - kappa) )
-    
-C = consensus(T)
+        def trust(W, S, threshold=0):
+            """Trust vector for subnets with variable threshold"""
+            Wn = (W > threshold).float()
+            return Wn.T @ S
+            
+        T = trust(W,Sn)
 
-def emission(C, R):
-    """Emission vector for subnets"""
-    E = C*R
-    return E / E.sum()
-    
-E = emission(C,R)
+        def rank(W, S):
+            """Rank vector for subnets"""
+            R = W.T @ S
+            return R / R.sum()
+            
+        R = rank(W,Sn)
+
+        def consensus(T, kappa=0.5, rho=10):
+            """Yuma Consensus 1"""
+            return torch.sigmoid( rho * (T - kappa) )
+            
+        C = consensus(T)
+
+        def emission(C, R):
+            """Emission vector for subnets"""
+            E = C*R
+            return E / E.sum()
+            
+        E = emission(C,R)
+        self.emission = E
+        return E
 
 
 def compute_rmse(tensor_a, tensor_b):
@@ -74,13 +88,12 @@ def is_hash_object(obj):
 #elif is_hash_object(predictions) == True:
          #hash_list += predictions
 
-def reward(self, response: OCRSynapse, hashResponse : HashSynapse) -> float:
-    predictions = response.response
-    hash = hashResponse.hashResponse
-    if predictions is None:
+def reward(self, unhash, hash, emission) -> float:
+    predictions = unhash
+    if predictions is None or hash is None:
         return 0.0
     
-    if hashlib.sha256(predictions)!= hash:
+    if hash_tensor(predictions) != hash:
         return 0.0
     
     prediction_reward = compute_rmse(predictions, emission)
@@ -95,10 +108,11 @@ def reward(self, response: OCRSynapse, hashResponse : HashSynapse) -> float:
 
 def get_rewards(
     self,
-    responses: List[OCRSynapse],
-    hashResponses: List[HashSynapse],
+    hashes,
+    unhashed,
+    emission,
 ) -> torch.FloatTensor:
     # Get all the reward results by iteratively calling your reward() function.
     return torch.FloatTensor(
-        [reward(self, response) for response in responses]
+        [reward(self, unhash, hashes[uid], emission) for (uid, unhash) in unhashed.items()]
     ).to(self.device)

@@ -21,6 +21,7 @@ from typing import Optional, List
 import struct
 import hashlib
 import base64
+from torch import FloatTensor
 
 def hash_tensor(emission):
     bytes = []
@@ -36,7 +37,7 @@ class HashSynapse(bt.Synapse):
     next_emission_hash: str
 
     # Emission tensor corresponding to the previously submitted hash
-    response = None
+    response: Optional[str] = None
 
     def deserialize(self) -> List[dict]:
         """
@@ -55,7 +56,7 @@ class EmissionSynapse(bt.Synapse):
     base64_image: str
 
     # Optional request output, filled by receiving axon.
-    response: Optional[str] = None
+    response: Optional[FloatTensor] = None
 
     def insert_tensor(self, emission):
         self.response = hash_tensor(emission)
@@ -67,4 +68,4 @@ class EmissionSynapse(bt.Synapse):
         Returns:
         - List[dict]: The deserialized response, which is a list of dictionaries containing the extracted data.
         """
-        return self.response
+        return hash_tensor(self.response)

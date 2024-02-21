@@ -43,6 +43,7 @@ class Validator(BaseValidatorNeuron):
 
         self.image_dir = './data/images/'
         self.emissions = EmissionSource()
+        self.previous_uids = None
         if not os.path.exists(self.image_dir):
             os.makedirs(self.image_dir)
 
@@ -90,6 +91,10 @@ class Validator(BaseValidatorNeuron):
             if resp.response:
                 self.previous_uids[uid] = resp.response["hash"]
 
+        bt.logging.info(f"Received responses: {responses}")
+        if previous_uids in None:
+            return
+
         synapse = ocr_subnet.protocol.EmissionSynapse(emission = 'emission tensor corresponding to previously sent hash')
         #synapses = []
         #for resp in previous_uids:
@@ -97,19 +102,18 @@ class Validator(BaseValidatorNeuron):
 
         check_responses = self.dendrite.query(
             # Send the query to selected miner axons in the network.
-            axons=[self.metagraph.axons[uid] for uid in previous_resp.keys()],
+            axons=[self.metagraph.axons[uid] for uid in previous_uids.keys()],
             # Pass the synapse to the miner.
             synapse=synapse,
             # Do not deserialize the response so that we have access to the raw response.
             deserialize=False,
         )
         unhashed = {}
-        for (uid, resp) in zip(previous_resp.keys(), check_responses):
+        for (uid, resp) in zip(previous_uids.keys(), check_responses):
             if resp.response:
                 unhashed[uid] = resp.response
 
         # Log the results for monitoring purposes.
-        bt.logging.info(f"Received responses: {responses}")
         bt.logging.info(f"Received responses: {check_responses}")
         self.emissions.sync()
         e = self.emissions.calculate_emission()

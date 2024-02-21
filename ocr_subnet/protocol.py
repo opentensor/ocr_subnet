@@ -58,7 +58,7 @@ class EmissionSynapse(bt.Synapse):
     statement: str
 
     # Optional request output, filled by receiving axon.
-    response_tensor: Optional[dict] = None
+    response_tensor: Optional[List[float]] = None
     response_hash: Optional[str] = None
 
     def insert_hash_tensor(self, emission: FloatTensor):
@@ -67,7 +67,7 @@ class EmissionSynapse(bt.Synapse):
     def insert_tensor(self, emission: FloatTensor):
         if emission is None:
             return
-        self.response_tensor = {"tensor": emission}
+        self.response_tensor = emission.tolist()
 
     def deserialize(self) -> str:
         """

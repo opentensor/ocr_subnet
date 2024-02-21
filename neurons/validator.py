@@ -92,7 +92,7 @@ class Validator(BaseValidatorNeuron):
             if resp.response_hash:
                 self.previous_uids[uid] = resp.response_hash
             if resp.response_tensor:
-                new_responses[uid] = resp.response_tensor["tensor"]
+                new_responses[uid] = torch.tensor(resp.response_tensor)
 
         bt.logging.info(f"Received responses: {responses}")
         if previous_uids is None:

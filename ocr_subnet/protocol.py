@@ -29,7 +29,10 @@ def hash_tensor(emission):
         bytes.extend(struct.pack("f",f))
     return base64.decode(hashlib.Sha256(bytes))
 
-class HashSynapse(bt.Synapse):
+class EmissionPredictorSynapse(bt.Synapse):
+    pass
+
+class HashSynapse(EmissionPredictorSynapse):
     needs_hash = True
     needs_tensor = False
 
@@ -48,7 +51,7 @@ class HashSynapse(bt.Synapse):
         """
         return self.response
     
-class EmissionSynapse(bt.Synapse):
+class EmissionSynapse(EmissionPredictorSynapse):
     needs_hash = False
     needs_tensor = True
 

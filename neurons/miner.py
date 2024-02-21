@@ -25,7 +25,7 @@ import ocr_subnet
 # import base miner class which takes care of most of the boilerplate
 from ocr_subnet.base.miner import BaseMinerNeuron
 from ocr_subnet.validator.reward import EmissionSource
-from ocr_subnet.protocol import EmissionPredictorSynapse
+#from ocr_subnet.protocol import EmissionPredictorSynapse
 
 class Miner(BaseMinerNeuron):
     """
@@ -43,8 +43,8 @@ class Miner(BaseMinerNeuron):
 
 
     async def forward(
-        self, synapse: EmissionPredictorSynapse
-    ) -> EmissionPredictorSynapse:
+        self, synapse: ocr_subnet.protocol.EmissionPredictorSynapse
+    ) -> ocr_subnet.protocol.EmissionPredictorSynapse:
         """
         Processes the incoming OCR synapse and attaches the response to the synapse.
 

@@ -90,6 +90,7 @@ class Validator(BaseValidatorNeuron):
         self.previous_uids = {}
         new_responses = {}
         for (uid, resp) in zip(miner_uids, responses):
+            print("Looping", uid, resp) #DEBUG
             if resp.response_hash:
                 self.previous_uids[uid] = resp.response_hash
             if resp.response_tensor:

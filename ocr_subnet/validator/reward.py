@@ -48,6 +48,7 @@ def compute_rmse(tensor_a, tensor_b):
         raise ValueError("Tensors must have the same shape.")
     
     rmse = torch.sqrt(torch.mean((tensor_a - tensor_b) ** 2))
+    bt.logging.debug(f"Got rmse: {rmse}") #DEBUG
     return rmse
 
 def is_hash_object(obj):

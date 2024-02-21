@@ -104,7 +104,7 @@ class Validator(BaseValidatorNeuron):
 
         bt.logging.info(f"Scored responses: {rewards}")
 
-        miner_uids = [uid for uid in unhashed.keys()]
+        miner_uids = [uid for uid in new_responses.keys()]
         # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
         self.update_scores(rewards, miner_uids)
 

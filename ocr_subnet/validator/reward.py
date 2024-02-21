@@ -39,7 +39,7 @@ class EmissionSource:
         if self.emission:
             return self.emission
         W=self.metagraph.W.float()
-        Sn = (metagraph.S/metagraph.S.sum()).clone().float()
+        Sn = (self.metagraph.S/self.metagraph.S.sum()).clone().float()
 
         def trust(W, S, threshold=0):
             """Trust vector for subnets with variable threshold"""

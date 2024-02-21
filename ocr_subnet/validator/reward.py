@@ -64,7 +64,8 @@ def reward(self, unhash, hash, emission) -> float:
     if predictions is None or hash is None:
         return 0.0
     
-    if hash_tensor(predictions) != hash:
+    pred_tensor = predictions.response_tensor["tensor"]
+    if hash_tensor(pred_tensor) != hash:
         return 0.0
     
     prediction_reward = compute_rmse(predictions, emission)

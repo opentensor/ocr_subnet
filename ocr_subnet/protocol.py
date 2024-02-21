@@ -51,18 +51,22 @@ class HashSynapse(EmissionPredictorSynapse):
         """
         return self.response
     
-class EmissionSynapse(EmissionPredictorSynapse):
+class EmissionSynapse(bt.Synapse):
     needs_hash = False
     needs_tensor = True
 
     # Required request input, filled by sending dendrite caller. It is a base64 encoded string.
-    emission: str
+    statement: str
 
     # Optional request output, filled by receiving axon.
-    response: Optional[dict] = None
+    response_tensor: Optional[dict] = None
+    response_hash: Optional[str] = None
+
+    def insert_hash_tensor(self, emission: FloatTensor):
+        self.response_hash = hash_tensor(emission)
 
     def insert_tensor(self, emission: FloatTensor):
-        self.response = {"hash": hash_tensor(emission)}
+        self.response_tensor = {"tensor": emission}
 
     def deserialize(self) -> str:
         """

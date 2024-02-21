@@ -43,8 +43,8 @@ class Miner(BaseMinerNeuron):
 
 
     async def forward(
-        self, synapse: ocr_subnet.protocol.EmissionPredictorSynapse
-    ) -> ocr_subnet.protocol.EmissionPredictorSynapse:
+        self, synapse: ocr_subnet.protocol.EmissionSynapse
+    ) -> ocr_subnet.protocol.EmissionSynapse:
         """
         Processes the incoming OCR synapse and attaches the response to the synapse.
 
@@ -55,19 +55,17 @@ class Miner(BaseMinerNeuron):
             ocr_subnet.protocol.OCRSynapse: The synapse object with the 'response' field set to the extracted data.
 
         """
-        if synapse.needs_hash:
-            #calculate your prediction here, the default code calculates the current emission
-            predicted_emission = EmissionSource().calculate_emission()
+        #calculate your prediction here, the default code calculates the current emission
+        predicted_emission = EmissionSource().calculate_emission()
+        synapse.insert_hash_tensor(predicted_emission)
 
-            self.prev_emission = predicted_emission
-            synapse.response = predicted_emission
-            return synapse
-        else:
-            synapse.insert_tensor(self.prev_emission)
-            return synapse
+        prev_emission = self.prev_emission
+        self.prev_emission = predicted_emission
+        synapse.insert_tensor(prev_emission)
+        return synapse
 
     async def blacklist(
-        self, synapse: ocr_subnet.protocol.EmissionPredictorSynapse
+        self, synapse: ocr_subnet.protocol.EmissionSynapse
     ) -> typing.Tuple[bool, str]:
         """
         Determines whether an incoming request should be blacklisted and thus ignored. Your implementation should
@@ -111,7 +109,7 @@ class Miner(BaseMinerNeuron):
         )
         return False, "Hotkey recognized!"
 
-    async def priority(self, synapse: ocr_subnet.protocol.EmissionPredictorSynapse) -> float:
+    async def priority(self, synapse: ocr_subnet.protocol.EmissionSynapse) -> float:
         """
         The priority function determines the order in which requests are handled. More valuable or higher-priority
         requests are processed before others. You should design your own priority mechanism with care.

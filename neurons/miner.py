@@ -40,6 +40,9 @@ class Miner(BaseMinerNeuron):
 
     def __init__(self, config=None):
         super(Miner, self).__init__(config=config)
+        src = EmissionSource()
+        src.sync()
+        self.default_emission = src.calculate_emission()
 
 
     async def forward(
@@ -56,10 +59,7 @@ class Miner(BaseMinerNeuron):
 
         """
         #calculate your prediction here, the default code calculates the current emission
-        src = EmissionSource()
-        src.sync()
-        predicted_emission = src.calculate_emission()
-        print(predicted_emission) #debug
+        predicted_emission = self.default_emission
         synapse.insert_hash_tensor(predicted_emission)
 
         prev_emission = self.prev_emission

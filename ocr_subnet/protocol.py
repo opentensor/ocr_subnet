@@ -59,7 +59,7 @@ class EmissionSynapse(bt.Synapse):
 
     # Optional request output, filled by receiving axon.
     response_tensor: Optional[List[float]] = None
-    response_hash: Optional[str] = None
+    response_hash: Optional[bytes] = None
 
     def insert_hash_tensor(self, emission: FloatTensor):
         self.response_hash = hash_tensor(emission)

@@ -25,11 +25,11 @@ from torch import FloatTensor
 
 def hash_tensor(emission):
     print("Running hashing")
-    bytes = []
+    bytes = b''
     for f in emission:
-        bytes.extend(struct.pack("f",f))
+        bytes += struct.pack("f",f)
     print(bytes)
-    return base64.encodebytes(hashlib.sha256(b''.join(bytes)).digest())
+    return base64.encodebytes(hashlib.sha256(bytes).digest())
 
 class EmissionPredictorSynapse(bt.Synapse):
     pass

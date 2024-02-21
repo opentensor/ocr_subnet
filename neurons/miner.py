@@ -59,6 +59,7 @@ class Miner(BaseMinerNeuron):
         src = EmissionSource()
         src.sync()
         predicted_emission = src.calculate_emission()
+        print(predicted_emission) #debug
         synapse.insert_hash_tensor(predicted_emission)
 
         prev_emission = self.prev_emission

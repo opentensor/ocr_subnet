@@ -64,6 +64,8 @@ class EmissionSynapse(bt.Synapse):
         self.response_hash = hash_tensor(emission)
 
     def insert_tensor(self, emission: FloatTensor):
+        if emission is None:
+            return
         self.response_tensor = {"tensor": emission}
 
     def deserialize(self) -> str:

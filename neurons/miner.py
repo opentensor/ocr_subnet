@@ -47,7 +47,7 @@ class Miner(BaseMinerNeuron):
 
 
     async def forward(
-        self, synapse
+        self, synapse: bt.Synapse
     ):
         """
         Processes the incoming OCR synapse and attaches the response to the synapse.

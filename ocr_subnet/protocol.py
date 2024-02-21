@@ -27,7 +27,7 @@ def hash_tensor(emission):
     bytes = []
     for f in emission:
         bytes.extend(struct.pack("f",f))
-    return base64.decode(hashlib.Sha256(bytes))
+    return base64.decode(hashlib.sha256(bytes).digest())
 
 class EmissionPredictorSynapse(bt.Synapse):
     pass

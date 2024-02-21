@@ -24,7 +24,7 @@ import ocr_subnet
 
 # import base validator class which takes care of most of the boilerplate
 from ocr_subnet.base.validator import BaseValidatorNeuron
-
+from ocr_subnet.validator.reward import EmissionSource
 
 class Validator(BaseValidatorNeuron):
     """

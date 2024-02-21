@@ -69,7 +69,7 @@ def reward(self, unhash, hash, emission) -> float:
         return 0.0
     
     print("PRED:", emission, predictions) # DEBUG
-    prediction_reward = compute_rmse(predictions, emission)
+    prediction_reward = 1 - compute_rmse(predictions, emission)
 
     #time_reward = max(1 - response.time_elapsed / self.config.neuron.timeout, 0)
     

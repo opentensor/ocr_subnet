@@ -95,7 +95,8 @@ class Validator(BaseValidatorNeuron):
             if resp.response_tensor:
                 new_responses[uid.tolist()] = torch.tensor(resp.response_tensor)
 
-        bt.logging.info(f"Received responses: {responses}")
+        bt.logging.debug(f"Received responses: {responses}")
+        bt.logging.info("Received responses")
         if previous_uids is None:
             return
 

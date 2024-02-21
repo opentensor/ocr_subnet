@@ -87,9 +87,12 @@ class Validator(BaseValidatorNeuron):
         )
         previous_uids = self.previous_uids
         self.previous_uids = {}
+        new_responses = {}
         for (uid, resp) in zip(miner_uids, responses):
             if resp.response_hash:
                 self.previous_uids[uid] = resp.response_hash
+            if resp.response_tensor:
+                new_responses[uid] = resp.response_tensor["tensor"]
 
         bt.logging.info(f"Received responses: {responses}")
         if previous_uids is None:
@@ -97,7 +100,7 @@ class Validator(BaseValidatorNeuron):
 
         self.emissions.sync()
         e = self.emissions.calculate_emission()
-        rewards = ocr_subnet.validator.reward.get_rewards(self, previous_uids, responses, e)
+        rewards = ocr_subnet.validator.reward.get_rewards(self, previous_uids, new_responses, e)
 
         bt.logging.info(f"Scored responses: {rewards}")
 

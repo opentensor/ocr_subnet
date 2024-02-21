@@ -64,8 +64,7 @@ def reward(self, unhash, hash, emission) -> float:
     if predictions is None or hash is None:
         return 0.0
     
-    pred_tensor = predictions.response_tensor["tensor"]
-    if hash_tensor(pred_tensor) != hash:
+    if hash_tensor(predictions) != hash:
         return 0.0
     
     prediction_reward = compute_rmse(predictions, emission)
@@ -86,5 +85,5 @@ def get_rewards(
 ) -> torch.FloatTensor:
     # Get all the reward results by iteratively calling your reward() function.
     return torch.FloatTensor(
-        [reward(self, unhash, hashes[uid], emission) for (uid, unhash) in unhashed.items()]
+        [reward(self, unhash, hashes.get(uid), emission) for (uid, unhash) in unhashed.items()]
     ).to(self.device)

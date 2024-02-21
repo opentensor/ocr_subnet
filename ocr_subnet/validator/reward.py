@@ -62,14 +62,13 @@ def is_hash_object(obj):
 
 def reward(self, unhash, hash, emission) -> float:
     predictions = unhash
-    print(hash, hash_tensor(predictions)) #DEBUG
     if predictions is None or hash is None:
         return 0.0
     
     if hash_tensor(predictions) != hash:
         return 0.0
     
-    print("PRED:", predictions)
+    print("PRED:", emission, predictions) # DEBUG
     prediction_reward = compute_rmse(predictions, emission)
 
     #time_reward = max(1 - response.time_elapsed / self.config.neuron.timeout, 0)

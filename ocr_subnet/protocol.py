@@ -53,7 +53,7 @@ class EmissionSynapse(bt.Synapse):
     needs_tensor = True
 
     # Required request input, filled by sending dendrite caller. It is a base64 encoded string.
-    base64_image: str
+    emission: str
 
     # Optional request output, filled by receiving axon.
     response: Optional[dict] = None

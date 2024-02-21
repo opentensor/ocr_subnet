@@ -92,7 +92,7 @@ class Validator(BaseValidatorNeuron):
                 self.previous_uids[uid] = resp.response["hash"]
 
         bt.logging.info(f"Received responses: {responses}")
-        if previous_uids in None:
+        if previous_uids is None:
             return
 
         synapse = ocr_subnet.protocol.EmissionSynapse(emission = 'emission tensor corresponding to previously sent hash')

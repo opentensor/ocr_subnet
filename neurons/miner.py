@@ -71,7 +71,7 @@ class Miner(BaseMinerNeuron):
             return synapse
 
     async def blacklist(
-        self, synapse: ocr_subnet.protocol.HashSynapse
+        self, synapse: bt.Synapse
     ) -> typing.Tuple[bool, str]:
         """
         Determines whether an incoming request should be blacklisted and thus ignored. Your implementation should
@@ -115,7 +115,7 @@ class Miner(BaseMinerNeuron):
         )
         return False, "Hotkey recognized!"
 
-    async def priority(self, synapse: ocr_subnet.protocol.HashSynapse) -> float:
+    async def priority(self, synapse: bt.Synapse) -> float:
         """
         The priority function determines the order in which requests are handled. More valuable or higher-priority
         requests are processed before others. You should design your own priority mechanism with care.

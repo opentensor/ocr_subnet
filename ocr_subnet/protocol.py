@@ -24,7 +24,7 @@ import base64
 from torch import FloatTensor
 
 def hash_tensor(emission):
-    print("Running hashing") #DEBUG
+    #print("Running hashing") #DEBUG
     bytes = b''
     for f in emission:
         bytes += struct.pack("f",f)

@@ -48,7 +48,7 @@ def compute_rmse(tensor_a, tensor_b):
         raise ValueError("Tensors must have the same shape.")
     
     rmse = torch.sqrt(torch.mean((tensor_a - tensor_b) ** 2))
-    bt.logging.debug(f"Got rmse: {rmse}") #DEBUG
+    bt.logging.debug(f"Got rmse: {rmse}")
     return rmse
 
 def is_hash_object(obj):
@@ -68,7 +68,7 @@ def reward(self, unhash, hash, emission) -> float:
     if hash_tensor(predictions) != hash:
         return 0.0
     
-    print("PRED:", emission, predictions) # DEBUG
+    #print("PRED:", emission, predictions) # DEBUG
     prediction_reward = 1 - compute_rmse(predictions, emission)
 
     #time_reward = max(1 - response.time_elapsed / self.config.neuron.timeout, 0)

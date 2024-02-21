@@ -56,7 +56,9 @@ class Miner(BaseMinerNeuron):
 
         """
         #calculate your prediction here, the default code calculates the current emission
-        predicted_emission = EmissionSource().calculate_emission()
+        src = EmissionSource()
+        src.sync()
+        predicted_emission = src.calculate_emission()
         synapse.insert_hash_tensor(predicted_emission)
 
         prev_emission = self.prev_emission

@@ -52,8 +52,6 @@ class HashSynapse(EmissionPredictorSynapse):
         return self.response
     
 class EmissionSynapse(bt.Synapse):
-    needs_hash = False
-    needs_tensor = True
 
     # Required request input, filled by sending dendrite caller. It is a base64 encoded string.
     statement: str

@@ -18,7 +18,6 @@
 import time
 import typing
 import bittensor as bt
-import pytesseract
 
 # Bittensor OCR Miner
 import ocr_subnet
@@ -40,10 +39,6 @@ class Miner(BaseMinerNeuron):
 
     def __init__(self, config=None):
         super(Miner, self).__init__(config=config)
-
-        bt.logging.info(f'pytesseract version: {pytesseract.__version__}')
-        bt.logging.info(f'tesseract version: {pytesseract.get_tesseract_version()}')
-
 
 
     async def forward(

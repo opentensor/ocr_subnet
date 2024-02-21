@@ -35,7 +35,7 @@ class EmissionSource:
         self.metagraph.sync()
         self.emission = None
 
-    def calculate_emission():
+    def calculate_emission(self):
         if self.emission:
             return self.emission
         W=self.metagraph.W.float()

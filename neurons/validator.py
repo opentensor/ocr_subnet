@@ -19,6 +19,7 @@ import os
 import time
 import hashlib
 import bittensor as bt
+import torch
 
 import ocr_subnet
 

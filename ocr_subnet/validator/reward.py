@@ -28,7 +28,7 @@ from ocr_subnet.protocol import hash_tensor
 
 class EmissionSource:
     def __init__(self):
-        self.metagraph = bt.metagraph.metagraph(netuid=0, lite=False, sync=False)
+        self.metagraph = bt.metagraph(netuid=0, lite=False, sync=False)
         self.emission = None
 
     def sync(self):

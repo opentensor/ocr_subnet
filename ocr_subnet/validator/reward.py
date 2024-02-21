@@ -62,11 +62,11 @@ def is_hash_object(obj):
 
 def reward(self, unhash, hash, emission) -> float:
     predictions = unhash
-    print(hash, hash_tensor(predictions)) #DEBUG
+    print(hash, str(hash_tensor(predictions))) #DEBUG
     if predictions is None or hash is None:
         return 0.0
     
-    if hash_tensor(predictions) != hash:
+    if hash_tensor(predictions) != str(hash):
         return 0.0
     
     print("PRED:", predictions)

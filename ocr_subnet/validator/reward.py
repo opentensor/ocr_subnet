@@ -38,38 +38,8 @@ class EmissionSource:
     def calculate_emission(self):
         if self.emission:
             return self.emission
-        W=self.metagraph.W.float()
-        print(W) # DEBUG
-        Sn = (self.metagraph.S/self.metagraph.S.sum()).clone().float()
-
-        def trust(W, S, threshold=0):
-            """Trust vector for subnets with variable threshold"""
-            Wn = (W > threshold).float()
-            return torch.transpose(Wn,0,1) @ S
-            
-        T = trust(W,Sn)
-
-        def rank(W, S):
-            """Rank vector for subnets"""
-            R = torch.transpose(W,0,1) @ S
-            return R / R.sum()
-            
-        R = rank(W,Sn)
-
-        def consensus(T, kappa=0.5, rho=10):
-            """Yuma Consensus 1"""
-            return torch.sigmoid( rho * (T - kappa) )
-            
-        C = consensus(T)
-
-        def emission(C, R):
-            """Emission vector for subnets"""
-            E = C*R
-            return E / E.sum()
-            
-        E = emission(C,R)
-        self.emission = E
-        return E
+        self.emission = self.metagraph.E.float()
+        return self.emission
 
 
 def compute_rmse(tensor_a, tensor_b):

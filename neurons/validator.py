@@ -74,7 +74,7 @@ class Validator(BaseValidatorNeuron):
         #image_data = ocr_subnet.validator.generate.invoice(path=os.path.join(self.image_dir, f"{filename}.pdf"), corrupt=True)
 
         # Create synapse object to send to the miner and attach the image.
-        synapse = ocr_subnet.protocol.HashSynapse(next_emission_hash = 'base64-encoded Sha256 hash of the next emission')
+        synapse = ocr_subnet.protocol.HashSynapse(next_emission_hash = 'base64-encoded Sha256 hash of the next emission in subnet 1')
 
         # The dendrite client queries the network.
         responses = self.dendrite.query(

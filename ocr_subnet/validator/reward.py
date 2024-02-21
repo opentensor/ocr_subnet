@@ -39,18 +39,19 @@ class EmissionSource:
         if self.emission:
             return self.emission
         W=self.metagraph.W.float()
+        print(W) # DEBUG
         Sn = (self.metagraph.S/self.metagraph.S.sum()).clone().float()
 
         def trust(W, S, threshold=0):
             """Trust vector for subnets with variable threshold"""
             Wn = (W > threshold).float()
-            return Wn.T @ S
+            return torch.transpose(Wn,0,1) @ S
             
         T = trust(W,Sn)
 
         def rank(W, S):
             """Rank vector for subnets"""
-            R = W.T @ S
+            R = torch.transpose(W,0,1) @ S
             return R / R.sum()
             
         R = rank(W,Sn)

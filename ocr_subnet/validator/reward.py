@@ -67,7 +67,7 @@ def reward(self, unhash, hash, emission) -> float:
     if hash_tensor(predictions) != hash:
         return 0.0
     
-    bt.logging.debug("PRED:", predictions)
+    print("PRED:", predictions)
     prediction_reward = compute_rmse(predictions, emission)
 
     #time_reward = max(1 - response.time_elapsed / self.config.neuron.timeout, 0)
@@ -85,7 +85,7 @@ def get_rewards(
     emission,
 ) -> torch.FloatTensor:
     # Get all the reward results by iteratively calling your reward() function.
-    bt.logging.debug("Calculating rewards:", hashes, unhashed)
+    print("Calculating rewards:", hashes, unhashed)
     return torch.FloatTensor(
         [reward(self, unhash, hashes.get(uid), emission) for (uid, unhash) in unhashed.items()]
     ).to(self.device)

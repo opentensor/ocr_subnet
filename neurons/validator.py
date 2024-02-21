@@ -19,6 +19,7 @@ import os
 import time
 import hashlib
 import bittensor as bt
+import torch
 
 import ocr_subnet
 
@@ -74,7 +75,7 @@ class Validator(BaseValidatorNeuron):
         #image_data = ocr_subnet.validator.generate.invoice(path=os.path.join(self.image_dir, f"{filename}.pdf"), corrupt=True)
 
         # Create synapse object to send to the miner and attach the image.
-        synapse = ocr_subnet.protocol.HashSynapse(next_emission_hash = 'base64-encoded Sha256 hash of the next emission')
+        synapse = ocr_subnet.protocol.EmissionSynapse(statement = 'base64-encoded Sha256 hash of the next emission in subnet 1, along with prediction from previous tick as a tensor')
 
         # The dendrite client queries the network.
         responses = self.dendrite.query(
@@ -87,41 +88,25 @@ class Validator(BaseValidatorNeuron):
         )
         previous_uids = self.previous_uids
         self.previous_uids = {}
+        new_responses = {}
         for (uid, resp) in zip(miner_uids, responses):
-            if resp.response:
-                self.previous_uids[uid] = resp.response["hash"]
+            if resp.response_hash:
+                self.previous_uids[uid.tolist()] = resp.response_hash
+            if resp.response_tensor:
+                new_responses[uid.tolist()] = torch.tensor(resp.response_tensor)
 
-        bt.logging.info(f"Received responses: {responses}")
+        bt.logging.debug(f"Received responses: {responses}")
+        bt.logging.info("Received responses")
         if previous_uids is None:
             return
 
-        synapse = ocr_subnet.protocol.EmissionSynapse(emission = 'emission tensor corresponding to previously sent hash')
-        #synapses = []
-        #for resp in previous_uids:
-        #    synapses.append(ocr_subnet.protocol.HashSynapse(base64_image = 'tensor corresponding to hash: {}'.format(resp["hash"])))
-
-        check_responses = self.dendrite.query(
-            # Send the query to selected miner axons in the network.
-            axons=[self.metagraph.axons[uid] for uid in previous_uids.keys()],
-            # Pass the synapse to the miner.
-            synapse=synapse,
-            # Do not deserialize the response so that we have access to the raw response.
-            deserialize=False,
-        )
-        unhashed = {}
-        for (uid, resp) in zip(previous_uids.keys(), check_responses):
-            if resp.response:
-                unhashed[uid] = resp.response
-
-        # Log the results for monitoring purposes.
-        bt.logging.info(f"Received responses: {check_responses}")
         self.emissions.sync()
         e = self.emissions.calculate_emission()
-        rewards = ocr_subnet.validator.reward.get_rewards(self, previous_uids, unhashed, e)
+        rewards = ocr_subnet.validator.reward.get_rewards(self, previous_uids, new_responses, e)
 
         bt.logging.info(f"Scored responses: {rewards}")
 
-        miner_uids = [uid for uid in unhashed.keys()]
+        miner_uids = [uid for uid in new_responses.keys()]
         # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
         self.update_scores(rewards, miner_uids)
 

@@ -28,7 +28,7 @@ from ocr_subnet.protocol import hash_tensor
 
 class EmissionSource:
     def __init__(self):
-        self.metagraph = bt.metagraph(netuid=0, lite=False, sync=False)
+        self.metagraph = bt.metagraph(netuid=1, lite=False, sync=False)
         self.emission = None
 
     def sync(self):
@@ -38,37 +38,8 @@ class EmissionSource:
     def calculate_emission(self):
         if self.emission:
             return self.emission
-        W=self.metagraph.W.float()
-        Sn = (self.metagraph.S/self.metagraph.S.sum()).clone().float()
-
-        def trust(W, S, threshold=0):
-            """Trust vector for subnets with variable threshold"""
-            Wn = (W > threshold).float()
-            return Wn.T @ S
-            
-        T = trust(W,Sn)
-
-        def rank(W, S):
-            """Rank vector for subnets"""
-            R = W.T @ S
-            return R / R.sum()
-            
-        R = rank(W,Sn)
-
-        def consensus(T, kappa=0.5, rho=10):
-            """Yuma Consensus 1"""
-            return torch.sigmoid( rho * (T - kappa) )
-            
-        C = consensus(T)
-
-        def emission(C, R):
-            """Emission vector for subnets"""
-            E = C*R
-            return E / E.sum()
-            
-        E = emission(C,R)
-        self.emission = E
-        return E
+        self.emission = self.metagraph.E.float()
+        return self.emission
 
 
 def compute_rmse(tensor_a, tensor_b):
@@ -77,6 +48,7 @@ def compute_rmse(tensor_a, tensor_b):
         raise ValueError("Tensors must have the same shape.")
     
     rmse = torch.sqrt(torch.mean((tensor_a - tensor_b) ** 2))
+    bt.logging.debug(f"Got rmse: {rmse}")
     return rmse
 
 def is_hash_object(obj):
@@ -96,7 +68,8 @@ def reward(self, unhash, hash, emission) -> float:
     if hash_tensor(predictions) != hash:
         return 0.0
     
-    prediction_reward = compute_rmse(predictions, emission)
+    #print("PRED:", emission, predictions) # DEBUG
+    prediction_reward = 1 - compute_rmse(predictions, emission)
 
     #time_reward = max(1 - response.time_elapsed / self.config.neuron.timeout, 0)
     
@@ -113,6 +86,7 @@ def get_rewards(
     emission,
 ) -> torch.FloatTensor:
     # Get all the reward results by iteratively calling your reward() function.
+    print("Calculating rewards:", hashes, unhashed)
     return torch.FloatTensor(
-        [reward(self, unhash, hashes[uid], emission) for (uid, unhash) in unhashed.items()]
+        [reward(self, unhash, hashes.get(uid), emission) for (uid, unhash) in unhashed.items()]
     ).to(self.device)

@@ -24,12 +24,16 @@ import base64
 from torch import FloatTensor
 
 def hash_tensor(emission):
-    bytes = []
+    #print("Running hashing") #DEBUG
+    bytes = b''
     for f in emission:
-        bytes.extend(struct.pack("f",f))
-    return base64.decode(hashlib.Sha256(bytes))
+        bytes += struct.pack("f",f)
+    return base64.encodebytes(hashlib.sha256(bytes).digest())
 
-class HashSynapse(bt.Synapse):
+class EmissionPredictorSynapse(bt.Synapse):
+    pass
+
+class HashSynapse(EmissionPredictorSynapse):
     needs_hash = True
     needs_tensor = False
 
@@ -49,17 +53,21 @@ class HashSynapse(bt.Synapse):
         return self.response
     
 class EmissionSynapse(bt.Synapse):
-    needs_hash = False
-    needs_tensor = True
 
     # Required request input, filled by sending dendrite caller. It is a base64 encoded string.
-    emission: str
+    statement: str
 
     # Optional request output, filled by receiving axon.
-    response: Optional[dict] = None
+    response_tensor: Optional[List[float]] = None
+    response_hash: Optional[bytes] = None
+
+    def insert_hash_tensor(self, emission: FloatTensor):
+        self.response_hash = hash_tensor(emission)
 
     def insert_tensor(self, emission: FloatTensor):
-        self.response = {"hash": hash_tensor(emission)}
+        if emission is None:
+            return
+        self.response_tensor = emission.tolist()
 
     def deserialize(self) -> str:
         """

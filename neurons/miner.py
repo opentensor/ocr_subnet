@@ -25,6 +25,7 @@ import ocr_subnet
 # import base miner class which takes care of most of the boilerplate
 from ocr_subnet.base.miner import BaseMinerNeuron
 from ocr_subnet.validator.reward import EmissionSource
+#from ocr_subnet.protocol import EmissionPredictorSynapse
 
 class Miner(BaseMinerNeuron):
     """
@@ -39,11 +40,14 @@ class Miner(BaseMinerNeuron):
 
     def __init__(self, config=None):
         super(Miner, self).__init__(config=config)
+        src = EmissionSource()
+        src.sync()
+        self.default_emission = src.calculate_emission()
 
 
     async def forward(
-        self, synapse: bt.Synapse
-    ) -> bt.Synapse:
+        self, synapse: ocr_subnet.protocol.EmissionSynapse
+    ) -> ocr_subnet.protocol.EmissionSynapse:
         """
         Processes the incoming OCR synapse and attaches the response to the synapse.
 
@@ -54,19 +58,17 @@ class Miner(BaseMinerNeuron):
             ocr_subnet.protocol.OCRSynapse: The synapse object with the 'response' field set to the extracted data.
 
         """
-        if synapse.needs_hash:
-            #calculate your prediction here, the default code calculates the current emission
-            predicted_emission = EmissionSource().calculate_emission()
+        #calculate your prediction here, the default code calculates the current emission
+        predicted_emission = self.default_emission
+        synapse.insert_hash_tensor(predicted_emission)
 
-            self.prev_emission = predicted_emission
-            synapse.response = predicted_emission
-            return synapse
-        else:
-            synapse.insert_tensor(self.prev_emission)
-            return synapse
+        prev_emission = self.prev_emission
+        self.prev_emission = predicted_emission
+        synapse.insert_tensor(prev_emission)
+        return synapse
 
     async def blacklist(
-        self, synapse: bt.Synapse
+        self, synapse: ocr_subnet.protocol.EmissionSynapse
     ) -> typing.Tuple[bool, str]:
         """
         Determines whether an incoming request should be blacklisted and thus ignored. Your implementation should
@@ -110,7 +112,7 @@ class Miner(BaseMinerNeuron):
         )
         return False, "Hotkey recognized!"
 
-    async def priority(self, synapse: bt.Synapse) -> float:
+    async def priority(self, synapse: ocr_subnet.protocol.EmissionSynapse) -> float:
         """
         The priority function determines the order in which requests are handled. More valuable or higher-priority
         requests are processed before others. You should design your own priority mechanism with care.

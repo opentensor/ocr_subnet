@@ -91,9 +91,9 @@ class Validator(BaseValidatorNeuron):
         new_responses = {}
         for (uid, resp) in zip(miner_uids, responses):
             if resp.response_hash:
-                self.previous_uids[uid] = resp.response_hash
+                self.previous_uids[uid.tolist()] = resp.response_hash
             if resp.response_tensor:
-                new_responses[uid] = torch.tensor(resp.response_tensor)
+                new_responses[uid.tolist()] = torch.tensor(resp.response_tensor)
 
         bt.logging.info(f"Received responses: {responses}")
         if previous_uids is None:

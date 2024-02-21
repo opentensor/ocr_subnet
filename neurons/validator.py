@@ -46,7 +46,7 @@ class Validator(BaseValidatorNeuron):
         if not os.path.exists(self.image_dir):
             os.makedirs(self.image_dir)
 
-    async def forward(self, hashResponse):
+    async def forward(self):
         """
         The forward function is called by the validator every time step.
         

@@ -29,7 +29,7 @@ from ocr_subnet.validator.reward import EmissionSource
 
 class Miner(BaseMinerNeuron):
     """
-    OCR miner neuron class. You may also want to override the blacklist and priority functions according to your needs.
+    Miner neuron class. You may also want to override the blacklist and priority functions according to your needs.
 
     This class inherits from the BaseMinerNeuron class, which in turn inherits from BaseNeuron. The BaseNeuron class takes care of routine tasks such as setting up wallet, subtensor, metagraph, logging directory, parsing config, etc. You can override any of the methods in BaseNeuron if you need to customize the behavior.
 
@@ -49,14 +49,7 @@ class Miner(BaseMinerNeuron):
         self, synapse: ocr_subnet.protocol.EmissionSynapse
     ) -> ocr_subnet.protocol.EmissionSynapse:
         """
-        Processes the incoming OCR synapse and attaches the response to the synapse.
-
-        Args:
-            synapse (ocr_subnet.protocol.OCRSynapse): The synapse object containing the image data. 
-
-        Returns:
-            ocr_subnet.protocol.OCRSynapse: The synapse object with the 'response' field set to the extracted data.
-
+        Processes the incoming synapse and attaches the response to the synapse.
         """
         #calculate your prediction here, the default code calculates the current emission
         predicted_emission = self.default_emission
@@ -79,7 +72,7 @@ class Miner(BaseMinerNeuron):
         requests before they are deserialized to avoid wasting resources on requests that will be ignored.
 
         Args:
-            synapse (template.protocol.OCRSynapse): A synapse object constructed from the headers of the incoming request.
+            synapse (template.protocol.EmissionSynapse): A synapse object constructed from the headers of the incoming request.
 
         Returns:
             Tuple[bool, str]: A tuple containing a boolean indicating whether the synapse's hotkey is blacklisted,
@@ -120,7 +113,7 @@ class Miner(BaseMinerNeuron):
         This implementation assigns priority to incoming requests based on the calling entity's stake in the metagraph.
 
         Args:
-            synapse (template.protocol.OCRSynapse): The synapse object that contains metadata about the incoming request.
+            synapse (template.protocol.EmissionSynapse): The synapse object that contains metadata about the incoming request.
 
         Returns:
             float: A priority score derived from the stake of the calling entity.

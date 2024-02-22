@@ -51,15 +51,6 @@ def compute_rmse(tensor_a, tensor_b):
     bt.logging.debug(f"Got rmse: {rmse}")
     return rmse
 
-def is_hash_object(obj):
-    # Check if the object has the attribute 'digest' and 'hexdigest',
-    # which are methods provided by hashlib hash objects.
-    return hasattr(obj, 'digest') and callable(getattr(obj, 'digest')) and \
-           hasattr(obj, 'hexdigest') and callable(getattr(obj, 'hexdigest'))
-
-#elif is_hash_object(predictions) == True:
-         #hash_list += predictions
-
 def reward(self, unhash, hash, emission) -> float:
     predictions = unhash
     if predictions is None or hash is None:

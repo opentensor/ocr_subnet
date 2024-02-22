@@ -29,7 +29,7 @@ from ocr_subnet.validator.reward import EmissionSource
 
 class Validator(BaseValidatorNeuron):
     """
-    OCR validator neuron class.
+    Validator neuron class.
 
     This class inherits from the BaseValidatorNeuron class, which in turn inherits from BaseNeuron. The BaseNeuron class takes care of routine tasks such as setting up wallet, subtensor, metagraph, logging directory, parsing config, etc. You can override any of the methods in BaseNeuron if you need to customize the behavior.
 
@@ -42,11 +42,8 @@ class Validator(BaseValidatorNeuron):
         bt.logging.info("load_state()")
         self.load_state()
 
-        self.image_dir = './data/images/'
         self.emissions = EmissionSource()
         self.previous_uids = None
-        if not os.path.exists(self.image_dir):
-            os.makedirs(self.image_dir)
 
     async def forward(self):
         """
@@ -64,17 +61,9 @@ class Validator(BaseValidatorNeuron):
 
         """
 
-        # get_random_uids is an example method, but you can replace it with your own.
-        # miner_uids = ocr_subnet.utils.uids.get_random_uids(self, k=min(self.config.neuron.sample_size, self.metagraph.n.item()))
         miner_uids = ocr_subnet.utils.uids.get_all_uids(self)
 
-        # make a hash from the timestamp
-        #filename = hashlib.md5(str(time.time()).encode()).hexdigest()
-
-        # Create a random image and load it.
-        #image_data = ocr_subnet.validator.generate.invoice(path=os.path.join(self.image_dir, f"{filename}.pdf"), corrupt=True)
-
-        # Create synapse object to send to the miner and attach the image.
+        # Create synapse object to send to the miner.
         synapse = ocr_subnet.protocol.EmissionSynapse(statement = 'base64-encoded Sha256 hash of the next emission in subnet 1, along with prediction from previous tick as a tensor')
 
         # The dendrite client queries the network.
@@ -86,6 +75,8 @@ class Validator(BaseValidatorNeuron):
             # Do not deserialize the response so that we have access to the raw response.
             deserialize=False,
         )
+
+        # Fetch previous responses and record the new ones
         previous_uids = self.previous_uids
         self.previous_uids = {}
         new_responses = {}
@@ -100,13 +91,16 @@ class Validator(BaseValidatorNeuron):
         if previous_uids is None:
             return
 
+        # Calculate rewards
         self.emissions.sync()
         e = self.emissions.calculate_emission()
         rewards = ocr_subnet.validator.reward.get_rewards(self, previous_uids, new_responses, e)
 
         bt.logging.info(f"Scored responses: {rewards}")
 
+        # Redefine miner uids so they correspond to the rewards
         miner_uids = [uid for uid in new_responses.keys()]
+
         # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
         self.update_scores(rewards, miner_uids)
 

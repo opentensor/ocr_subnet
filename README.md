@@ -4,11 +4,19 @@
 [![Discord Chat](https://img.shields.io/discord/308323056592486420.svg)](https://discord.gg/bittensor)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
 
-Please find a description of our vision [here](https://docs.bittensor.com/python-api/html/autoapi/bittensor/metagraph/index.html).
-
 ---
 - **IMPORTANT:** Make sure you are aware of the minimum compute requirements for the subnet. See the [Minimum compute YAML configuration](./min_compute.yml).
-- Note that installation instructions differ based on your situation: For example, installing for local development and testing will require a few additional steps compared to installing for testnet. Similarly, installation instructions differ for a validator vs a miner. 
+- Note that installation instructions differ based on your situation: For example, installing for local development and testing will require a few additional steps compared to installing for testnet. Similarly, installation instructions differ for a validator vs a miner.
+
+## Running a miner or validator
+
+The miner and validator logic is contained in the appropriate files in `neuron`. As a miner you should implement your prediction strategy in the `forward` function. For a validator the provided script should be enough. To run a miner or validator:
+
+1. Set up a venv: `python -m venv venv` and activate: `source venv/bin/activate`
+2. Install dependencies: `pip install -r requirements.txt`
+3. Set up your wallets. For examples on how to do this, see the next section.
+4. Run the appropriate script, replacing values in curly brackets: `python neurons/{miner}.py --netuid 30  --wallet.name {default} --wallet.hotkey {default}`
+5. The venv should be active whenever the neurons are run.
 
 ## Running the credibility subnet
 

@@ -24,47 +24,27 @@ import base64
 from torch import FloatTensor
 
 def hash_tensor(emission):
-    #print("Running hashing") #DEBUG
     bytes = b''
     for f in emission:
         bytes += struct.pack("f",f)
     return base64.encodebytes(hashlib.sha256(bytes).digest())
-
-class EmissionPredictorSynapse(bt.Synapse):
-    pass
-
-class HashSynapse(EmissionPredictorSynapse):
-    needs_hash = True
-    needs_tensor = False
-
-    # Required request input, filled by sending dendrite caller. It is a base64 encoded string.
-    next_emission_hash: str
-
-    # Emission tensor corresponding to the previously submitted hash
-    response: Optional[str] = None
-
-    def deserialize(self) -> List[dict]:
-        """
-        Deserialize the miner response.
-
-        Returns:
-        - List[dict]: The deserialized response, which is a list of dictionaries containing the extracted data.
-        """
-        return self.response
     
 class EmissionSynapse(bt.Synapse):
 
-    # Required request input, filled by sending dendrite caller. It is a base64 encoded string.
+    # Required request input, filled by sending dendrite caller.
     statement: str
 
-    # Optional request output, filled by receiving axon.
+    # Optional request outputs, filled by receiving axon. 
+    # Do not write to these directly, use the provided methods.
     response_tensor: Optional[List[float]] = None
     response_hash: Optional[bytes] = None
 
     def insert_hash_tensor(self, emission: FloatTensor):
+        """Inserts a prediction for the next block into the synapse"""
         self.response_hash = hash_tensor(emission)
 
     def insert_tensor(self, emission: FloatTensor):
+        """Inserts the tensor which was sent as a prediction in the previous block into the synapse"""
         if emission is None:
             return
         self.response_tensor = emission.tolist()
@@ -72,8 +52,5 @@ class EmissionSynapse(bt.Synapse):
     def deserialize(self) -> str:
         """
         Deserialize the miner response.
-
-        Returns:
-        - List[dict]: The deserialized response, which is a list of dictionaries containing the extracted data.
         """
         return hash_tensor(self.response)

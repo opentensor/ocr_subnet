@@ -76,7 +76,7 @@ def get_rewards(
     emission,
 ) -> torch.FloatTensor:
     # Get all the reward results by iteratively calling your reward() function.
-    print("Calculating rewards:", hashes, unhashed)
+    #print("Calculating rewards:", hashes, unhashed)
     return torch.FloatTensor(
         [reward(self, unhash, hashes.get(uid), emission) for (uid, unhash) in unhashed.items()]
     ).to(self.device)

@@ -17,17 +17,19 @@ Please find a detailed description of our vision [here](https://amedeo-gigaver.g
 
 *As a reminder, one bittensor epoch is called a tempo and lasts 360 blocks. At the end of a tempo the reward allocated to neurons is computed by the Bittensor consensus.*
 
-Currently the miners are competing to predict the rate of allocation of emissions to neurons in subnet 1 which is encoded within an emission vector that can be accessed by passing the parameter 'emission' to a [metagraph object](https://docs.bittensor.com/python-api/html/autoapi/bittensor/metagraph/index.html). 
-The scoring is based on [RMSE](https://en.wikipedia.org/wiki/Root-mean-square_deviation). Specifically the validator computes $1-RMSE(\text{prediction}, \text{realized emission vector})$. The protocol between the miner and the validator is the following:
-1. The validator queries the miner
-2. The miners submit a hash of their prediction for the next tempo as well as their prediction for the current emission vector. This prediction must correspond to the hash they submitted during the preceding epoch.
-3. The validator checks the hashing condition and computes the RMSE based scoring on the miner's prediction. The validator also stores the submitted hash for the next tempo. 
+Currently the miners are competing to predict the rate of TAO emissions to neurons in subnet 1, which is encoded within an emission vector that can be accessed by passing the parameter 'emission' to a [metagraph object](https://docs.bittensor.com/python-api/html/autoapi/bittensor/metagraph/index.html). 
+The scoring is based on [RMSE](https://en.wikipedia.org/wiki/Root-mean-square_deviation) i.e root mean square deviation. Specifically the validator computes $1-RMSE(\text{prediction}, \text{realized emission vector})$. 
+
+The protocol between the miner and the validator is the following:
+1. The validator queries the miner.
+2. The miner submits a hash of their prediction for the next tempo as well as their prediction for the current emission vector. This prediction must correspond to the hash they submitted during the preceding epoch.
+3. The validator checks the hashing condition and scores the miner's prediction using RMSE. The validator also stores the submitted hash for the next tempo. 
 
 ## Running a miner or validator
 
 The miner and validator logic is contained in the appropriate files in `neuron`. As a miner you should implement your prediction strategy in the `forward` function. For a validator the provided script should be enough. 
 
-First clone this repo `git clone https://github.com/amedeo-gigaver/credible_subnet.git`. Then to run a miner or validator:
+First clone this repo by running `git clone https://github.com/amedeo-gigaver/credible_subnet.git`. Then to run a miner or validator:
 
 1. Set up a venv: `python -m venv venv` and activate: `source venv/bin/activate`
 2. Install dependencies: `pip install -r requirements.txt`
@@ -37,7 +39,8 @@ First clone this repo `git clone https://github.com/amedeo-gigaver/credible_subn
 
 ## Setting up a bittensor wallet
 A detailed explanation of how to set up a wallet can be found [here](https://docs.bittensor.com/getting-started/wallets). 
-Two important commands are `btcli wallet list` and `btcli wallet overview`. The first one allows you to vizualize your wallets in tree-like maner where you can clearly see each cold key and the hot keys that are associated with it. The second one allows you to see the subnets in which you are registered as well as your balance. Importantly the `btcli wallet list` command allows you to see the wallet name that is associated with each cold key and each hot key. This is important since you use the pair of names for the cold key and the hot key rather than the keys themselves to run the bittensor commands related to wallets.  
+
+Two important commands are `btcli wallet list` and `btcli wallet overview`. The first one allows you to vizualize your wallets in a tree-like manner where one can clearly see each coldkey as well as the hotkeys that are associated with it. The second one allows you to see the subnets in which you are registered as well as your balance. Importantly the `btcli wallet list` command allows you to see the wallet name that is associated with each pair of coldkey and hotkey. This is important since you use the names of the coldkey and the hotkey rather than the keys themselves to run bittensor commands related to wallets.  
 
 ---
 

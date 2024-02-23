@@ -52,7 +52,7 @@ class Miner(BaseMinerNeuron):
         Processes the incoming synapse and attaches the response to the synapse.
         """
         #calculate your prediction here, the default code calculates the current emission
-        predicted_emission = self.default_emission
+        predicted_emission = self.default_emission - self.default_emission # 0 tensor of the appropriate length is a reasonable guess
         synapse.insert_hash_tensor(predicted_emission)
 
         prev_emission = self.prev_emission

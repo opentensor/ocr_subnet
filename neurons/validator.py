@@ -60,11 +60,18 @@ class Validator(BaseValidatorNeuron):
             self (:obj:`bittensor.neuron.Neuron`): The neuron object which contains all the necessary state for the validator.
 
         """
+        self.emissions.sync()
+        e = self.emissions.calculate_emission()
+        if self.prev_e is not None:
+            residue = e - self.prev_e
+        else:
+            residue = e - e
+        self.prev_e = e
 
         miner_uids = ocr_subnet.utils.uids.get_all_uids(self)
 
         # Create synapse object to send to the miner.
-        synapse = ocr_subnet.protocol.EmissionSynapse(statement = 'base64-encoded Sha256 hash of the next emission in subnet 1, along with prediction from previous tick as a tensor')
+        synapse = ocr_subnet.protocol.EmissionSynapse(statement = 'base64-encoded Sha256 hash of the forecasted change in emission in subnet 1, along with prediction from previous tick as a tensor')
 
         # The dendrite client queries the network.
         responses = self.dendrite.query(
@@ -92,9 +99,7 @@ class Validator(BaseValidatorNeuron):
             return
 
         # Calculate rewards
-        self.emissions.sync()
-        e = self.emissions.calculate_emission()
-        rewards = ocr_subnet.validator.reward.get_rewards(self, previous_uids, new_responses, e)
+        rewards = ocr_subnet.validator.reward.get_rewards(self, previous_uids, new_responses, residue)
 
         bt.logging.info(f"Scored responses: {rewards}")
 

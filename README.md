@@ -11,7 +11,7 @@ We are currently releasing the subnet by stage, focusing on responsible disclosu
 We call the design we develop for this subnet **delayed validation based on future events**.
 Validators assess the miners' work based on outcomes of future events that are unknown at the time of task completion. These events could initially be internal milestones or metrics within the Bittensor network itself, such as emission rates, network growth rates, transaction volumes, or other quantifiable metrics that can be predicted but not manipulated by individual actors. As the system matures, the scope of events could expand to include external world events, further reducing the predictability and potential for collusion.
 
-Please find a detailled description of our vision [here](https://amedeo-gigaver.gitbook.io/subnet-30/).
+Please find a detailed description of our vision [here](https://amedeo-gigaver.gitbook.io/subnet-30/).
 
 ## Incentive mechanism
 

@@ -18,6 +18,7 @@
 import torch
 import bittensor as bt
 import hashlib
+import math
 from typing import List
 
 from scipy.optimize import linear_sum_assignment
@@ -59,7 +60,8 @@ def reward(self, unhash, hash, emission) -> float:
         return 0.0
     
     #print("PRED:", emission, predictions) # DEBUG
-    prediction_reward = 0.0 - compute_rmse(predictions, emission)
+    n_predictions = emission*(2/math.pi)*torch.atan(predictions)
+    prediction_reward = 1 - compute_rmse(n_predictions, emission)
 
     #time_reward = max(1 - response.time_elapsed / self.config.neuron.timeout, 0)
     

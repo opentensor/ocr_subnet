@@ -60,15 +60,16 @@ def reward(self, unhash, hash, emission) -> float:
         return 0.0
     
     #print("PRED:", emission, predictions) # DEBUG
-    n_predictions = emission*(2/math.pi)*torch.atan(predictions)
-    prediction_reward = 1 - compute_rmse(n_predictions, emission)
-
+    prediction_reward = 0.0 - compute_rmse(predictions, emission)
+    c = 1.0 # scaling factor
+    scaled_reward = torch.atan(c*prediction_reward) + math.pi/2
+    
     #time_reward = max(1 - response.time_elapsed / self.config.neuron.timeout, 0)
     
     # alpha_time * time_reward) / (alpha_prediction + alpha_time)
 
-    bt.logging.info(f"prediction_reward: {prediction_reward:.3f}")
-    return prediction_reward
+    bt.logging.info(f"prediction_reward: {scaled_reward:.3f}")
+    return scaled_reward
 
 
 def get_rewards(

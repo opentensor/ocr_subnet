@@ -19,7 +19,7 @@ Validators assess the miners' work based on outcomes of future events that are u
 *As a reminder, one bittensor epoch is called a tempo and lasts 360 blocks. At the end of a tempo the reward allocated to neurons is computed by the Bittensor consensus.*
 
 Currently the miners are competing to predict the rate of TAO emissions to neurons in subnet 1, which is encoded within an emission vector that can be accessed by passing the parameter 'emission' to a [metagraph object](https://docs.bittensor.com/python-api/html/autoapi/bittensor/metagraph/index.html). 
-The scoring is based on [RMSE](https://en.wikipedia.org/wiki/Root-mean-square_deviation) i.e root mean square deviation. Specifically the validator computes $f(RMSE((\text{prediction}), \text{realized emission vector})) + C$ where $f$ is a function used to ensure that the score remains positive and $C$ is a constant. 
+The scoring is based on [RMSE](https://en.wikipedia.org/wiki/Root-mean-square_deviation) i.e root mean square deviation. Specifically the validator computes $f(RMSE((\text{prediction}), \text{realized emission vector}))$ where $f$ is a function used to ensure that the score remains positive and $C$ is a constant. 
 
 The protocol between the miner and the validator is the following:
 1. The validator queries the miner.

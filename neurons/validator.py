@@ -27,6 +27,15 @@ import ocr_subnet
 from ocr_subnet.base.validator import BaseValidatorNeuron
 from ocr_subnet.validator.reward import EmissionSource
 
+RETRY_TIME = 5 # In seconds
+
+def retry_to_effect(url):
+    try:
+        return requests.get(url).json()
+    except json.decoder.JSONDecodeError:
+        time.sleep(RETRY_TIME)
+        return retry_to_effect(url)
+
 class Validator(BaseValidatorNeuron):
     """
     Validator neuron class.
@@ -42,8 +51,37 @@ class Validator(BaseValidatorNeuron):
         bt.logging.info("load_state()")
         self.load_state()
 
-        self.emissions = EmissionSource()
-        self.previous_uids = None
+        self.blocktime = 1
+        self.active_markets = {}
+
+    def get_active_markets(self):
+        first = True
+        cursor = None
+        while cursor != "LTE=":
+            try:
+                if first:
+                    resp = requests.get("https://clob.polymarket.com/markets")
+                    nxt = resp.json()
+                    first = False
+                else:
+                    resp = requests.get("https://clob.polymarket.com/markets?next_cursor={}".format(cursor))
+                    nxt = resp.json()
+                cursor = nxt["next_cursor"]
+                for mart in nxt["data"]:
+                    self.active_markets[mart["condition_id"]] = idx
+            except json.decoder.JSONDecodeError:
+                print("Got error, retrying...")
+                #print(resp.text)
+                time.sleep(1)
+        settled_markets = []
+        for (cid, seq) in self.active_markets.items():
+            if seq != idx:
+                check = retry_to_effect("https://clob.polymarket.com/markets/{}".format(cid))
+                if check["closed"]:
+                    settled_markets.append(cid)
+        for cid in settled_markets:
+            self.active_markets.pop(cid)
+        return settled_markets
 
     async def forward(self):
         """
@@ -60,18 +98,13 @@ class Validator(BaseValidatorNeuron):
             self (:obj:`bittensor.neuron.Neuron`): The neuron object which contains all the necessary state for the validator.
 
         """
-        self.emissions.sync()
-        e = self.emissions.calculate_emission()
-        if self.prev_e is not None:
-            residue = e - self.prev_e
-        else:
-            residue = e - e
-        self.prev_e = e
-
         miner_uids = ocr_subnet.utils.uids.get_all_uids(self)
 
+        #update markets
+        settled_markets = self.get_active_markets()
+
         # Create synapse object to send to the miner.
-        synapse = ocr_subnet.protocol.EmissionSynapse(statement = 'base64-encoded Sha256 hash of the forecasted change in emission in subnet 1, along with prediction from previous tick as a tensor')
+        synapse = ocr_subnet.protocol.EmissionSynapse(self.active_markets)
 
         # The dendrite client queries the network.
         responses = self.dendrite.query(

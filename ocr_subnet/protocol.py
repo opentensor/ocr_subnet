@@ -26,3 +26,8 @@ class EventPredictionSynapse(bt.Synapse):
     # 2 - Guess second possibility
     events: dict
 
+    def __init__(self, activate_markets):
+        self.events = {}
+        for cid in activate_markets.keys():
+            self.events[cid] = 0
+

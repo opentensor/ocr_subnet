@@ -20,6 +20,52 @@ import time
 import hashlib
 import bittensor as bt
 import torch
+import collections as c
+
+class MinerSubmissions:
+    """
+    Contains deques of miner responses, with timestamps. The newest submission is on the left.
+    """
+    def __init__(self, cutoff):
+        self.cutoff = cutoff
+        self.miners = {}
+    
+    class Submission:
+        def __init__(time, answer):
+            self.time = time
+            self.answer = answer
+
+    def insert(self, miner_uid, cid, current_time, answer):
+        questions = self.miners.get(miner_uid)
+        if questions is None:
+            self.miners[miner_uid] = {}
+            questions = self.miners[miner_uid]
+        deq = questions.get(cid)
+        if deq is None:
+            questions[cid] = c.deque()
+            deq = questions[cid]
+        if deq[-1].answer == answer:
+            return
+        else:
+            deq.appendleft(Submission(current_time, answer))
+
+    def get(self, miner_uid, cid, current_time):
+        questions = self.miners.get(miner_uid)
+        if questions is None:
+            return None
+        deq = questions.get(cid)
+        if deq is None:
+            return None
+        result = None
+        for sub in deq:
+            if current_time - sub.time > self.cutoff:
+                result = sub.answer
+                break
+        questions.pop(cid) # Clean up the results, they won't be needed
+        return result
+
+
+    
 
 import ocr_subnet
 
@@ -28,6 +74,7 @@ from ocr_subnet.base.validator import BaseValidatorNeuron
 from ocr_subnet.validator.reward import EmissionSource
 
 RETRY_TIME = 5 # In seconds
+CUTOFF = 7200 # Roughly a day
 
 def retry_to_effect(url):
     try:
@@ -35,6 +82,15 @@ def retry_to_effect(url):
     except json.decoder.JSONDecodeError:
         time.sleep(RETRY_TIME)
         return retry_to_effect(url)
+
+def get_answer(market):
+    toks = market["tokens"]
+    if toks[0]["winner"]:
+        return 1
+    elif toks[1]["winner"]:
+        return 2
+    else:
+        return None
 
 class Validator(BaseValidatorNeuron):
     """
@@ -45,14 +101,17 @@ class Validator(BaseValidatorNeuron):
     This class provides reasonable default behavior for a validator such as keeping a moving average of the scores of the miners and using them to set weights at the end of each epoch. Additionally, the scores are reset for new hotkeys at the end of each epoch.
     """
 
-    def __init__(self, config=None):
+    def __init__(self, config=None, override_cutoff = False):
         super(Validator, self).__init__(config=config)
 
         bt.logging.info("load_state()")
         self.load_state()
-
-        self.blocktime = 1
+        if override_cutoff:
+            self.blocktime = CUTOFF
+        else:
+            self.blocktime = 1
         self.active_markets = {}
+        self.submissions = MinerSubmissions(CUTOFF)
 
     def get_active_markets(self):
         first = True
@@ -78,7 +137,7 @@ class Validator(BaseValidatorNeuron):
             if seq != idx:
                 check = retry_to_effect("https://clob.polymarket.com/markets/{}".format(cid))
                 if check["closed"]:
-                    settled_markets.append(cid)
+                    settled_markets.append(check)
         for cid in settled_markets:
             self.active_markets.pop(cid)
         return settled_markets
@@ -104,7 +163,7 @@ class Validator(BaseValidatorNeuron):
         settled_markets = self.get_active_markets()
 
         # Create synapse object to send to the miner.
-        synapse = ocr_subnet.protocol.EmissionSynapse(self.active_markets)
+        synapse = ocr_subnet.protocol.EventPredictionSynapse(self.active_markets)
 
         # The dendrite client queries the network.
         responses = self.dendrite.query(
@@ -116,28 +175,28 @@ class Validator(BaseValidatorNeuron):
             deserialize=False,
         )
 
-        # Fetch previous responses and record the new ones
-        previous_uids = self.previous_uids
-        self.previous_uids = {}
-        new_responses = {}
+        # Update answers
         for (uid, resp) in zip(miner_uids, responses):
-            if resp.response_hash:
-                self.previous_uids[uid.tolist()] = resp.response_hash
-            if resp.response_tensor:
-                new_responses[uid.tolist()] = torch.tensor(resp.response_tensor)
+            for (cid, ans) in resp.events:
+                self.submissions.insert(uid, cid, self.blocktime, ans)
 
         bt.logging.debug(f"Received responses: {responses}")
         bt.logging.info("Received responses")
-        if previous_uids is None:
-            return
 
-        # Calculate rewards
-        rewards = ocr_subnet.validator.reward.get_rewards(self, previous_uids, new_responses, residue)
-
-        bt.logging.info(f"Scored responses: {rewards}")
-
-        # Redefine miner uids so they correspond to the rewards
-        miner_uids = [uid for uid in new_responses.keys()]
+        # Score events
+        for market in settled_markets:
+            scores = []
+            for uid in miner_uids:
+                ans = self.submissions.get(uid, market["condition_id"], self.blocktime)
+                if ans is None or ans == 0:
+                    scores.append(0.5)
+                else:
+                    correct_ans = get_answer(market)
+                    if correct_ans == ans:
+                        scores.append(1)
+                    else:
+                        scores.append(0)
+            self.update_scores(scores, miner_uids)
 
         # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
         self.update_scores(rewards, miner_uids)

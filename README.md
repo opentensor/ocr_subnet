@@ -1,5 +1,7 @@
 <div align="left">
 
+# Prediction subnet
+
 ## Forecasting of future world events 
 
 We incentivize the prediction of future events. We currently restrict the space to binary future events listed on Polymarket. Miners compete by sending to the validators a vector of probabilities for each event that we support. 

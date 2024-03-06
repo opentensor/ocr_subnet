@@ -13,7 +13,7 @@ For example, for two binary events $E_1$ and $E_2$ a miner would submit a vector
 Denote by $S(p_j, o_i)$ the quadratic scoring rule for a prediction $p_j$ of the event $E_i$ which returns $(o_i - p_i)^2$, where $o_i$ is $0$ or $1$ depending on the realization of $E_i$. The lower the quadratic scoring rule the better the score. A quadratic scoring rule is proper i.e it incentivizes miner to report their true prediction.
 
 
-We implement a sequentially shared quadratic scoring rule. This allows us to score $0$ miners that do not bring new information to the market, as well as to bring value by aggregating informating. 
+We implement a sequentially shared quadratic scoring rule. This allows us to score $0$ miners that do not bring new information to the market, as well as to bring value by aggregating information. 
 This functions by scoring each miner relatively to the previous one. The score of the miner $j$ is then $S(p_j, o_i) - S(p_{j-1}, o_i)$ where $p_{j-1}$ is the submission of the previous miner. Importantly this payoff can be negative, therefore in practice when aggregating the scores a miner we add a $\max(-,0)$ operation.
 In our current implementation instead of paying the miner for their delta with the previous prediction, we pay them for their delta with the polymarket price for this event i.e $S(p_j, o_i) - S(\text{price on polymarket at t}, o_i)$ for $p_j$ submitted at $t$.
 

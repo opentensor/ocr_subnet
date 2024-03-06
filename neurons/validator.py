@@ -21,6 +21,8 @@ import hashlib
 import bittensor as bt
 import torch
 import collections as c
+import requests
+import json
 
 class MinerSubmissions:
     """
@@ -31,7 +33,7 @@ class MinerSubmissions:
         self.miners = {}
     
     class Submission:
-        def __init__(time, answer):
+        def __init__(self, time, answer):
             self.time = time
             self.answer = answer
 
@@ -44,10 +46,10 @@ class MinerSubmissions:
         if deq is None:
             questions[cid] = c.deque()
             deq = questions[cid]
-        if deq[-1].answer == answer:
+        if len(deq) > 0 and deq[-1].answer == answer:
             return
         else:
-            deq.appendleft(Submission(current_time, answer))
+            deq.appendleft(self.Submission(current_time, answer))
 
     def get(self, miner_uid, cid, current_time):
         questions = self.miners.get(miner_uid)
@@ -106,17 +108,15 @@ class Validator(BaseValidatorNeuron):
 
         bt.logging.info("load_state()")
         self.load_state()
-        if override_cutoff:
-            self.blocktime = CUTOFF
-        else:
-            self.blocktime = 1
         self.active_markets = {}
         self.submissions = MinerSubmissions(CUTOFF)
+        self.blocktime = 0
 
     def get_active_markets(self):
         first = True
         cursor = None
         while cursor != "LTE=":
+            #bt.logging.debug("Looping", cursor)
             try:
                 if first:
                     resp = requests.get("https://clob.polymarket.com/markets")
@@ -127,19 +127,24 @@ class Validator(BaseValidatorNeuron):
                     nxt = resp.json()
                 cursor = nxt["next_cursor"]
                 for mart in nxt["data"]:
-                    self.active_markets[mart["condition_id"]] = idx
+                    self.active_markets[mart["condition_id"]] = self.blocktime
             except json.decoder.JSONDecodeError:
                 print("Got error, retrying...")
                 #print(resp.text)
-                time.sleep(1)
+                time.sleep(3)
+        #bt.logging.debug("Out of market fetch loop")
         settled_markets = []
         for (cid, seq) in self.active_markets.items():
-            if seq != idx:
+            #bt.logging.debug("Looping", cid)
+            if seq != self.blocktime:
+                bt.logging.info("Event fired: {}".format(cid), self.blocktime)
                 check = retry_to_effect("https://clob.polymarket.com/markets/{}".format(cid))
                 if check["closed"]:
                     settled_markets.append(check)
+        #bt.logging.debug("Out of stale market check")
         for cid in settled_markets:
             self.active_markets.pop(cid)
+        #bt.logging.debug("returning")
         return settled_markets
 
     async def forward(self):
@@ -160,11 +165,15 @@ class Validator(BaseValidatorNeuron):
         miner_uids = ocr_subnet.utils.uids.get_all_uids(self)
 
         #update markets
+        bt.logging.info("Fetching events...")
         settled_markets = self.get_active_markets()
-
+        bt.logging.info("Events fetched")
+        
         # Create synapse object to send to the miner.
-        synapse = ocr_subnet.protocol.EventPredictionSynapse(self.active_markets)
+        synapse = ocr_subnet.protocol.EventPredictionSynapse()
+        synapse.init(self.active_markets)
 
+        bt.logging.info("Querying miners...")
         # The dendrite client queries the network.
         responses = self.dendrite.query(
             # Send the query to selected miner axons in the network.
@@ -177,7 +186,7 @@ class Validator(BaseValidatorNeuron):
 
         # Update answers
         for (uid, resp) in zip(miner_uids, responses):
-            for (cid, ans) in resp.events:
+            for (cid, ans) in resp.events.items():
                 self.submissions.insert(uid, cid, self.blocktime, ans)
 
         bt.logging.debug(f"Received responses: {responses}")
@@ -198,8 +207,10 @@ class Validator(BaseValidatorNeuron):
                         scores.append(0)
             self.update_scores(scores, miner_uids)
 
+        self.blocktime += 1
+
         # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
-        self.update_scores(rewards, miner_uids)
+        # self.update_scores(rewards, miner_uids)
 
 
 # The main function parses the configuration and runs the validator.

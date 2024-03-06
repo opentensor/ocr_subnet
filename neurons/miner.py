@@ -52,6 +52,7 @@ class Miner(BaseMinerNeuron):
         Processes the incoming synapse and attaches the response to the synapse.
         """
         #calculate your prediction here, the default code simply leaves all guesses default, which gives half credit for each.
+        bt.logging.info("Received synapse")
         return synapse
 
     async def blacklist(

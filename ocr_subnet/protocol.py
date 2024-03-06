@@ -24,10 +24,9 @@ class EventPredictionSynapse(bt.Synapse):
     # 0 - No guess
     # 1 - Guess first possibility (see https://clob.polymarket.com/markets/<cid>)
     # 2 - Guess second possibility
-    events: dict
+    events: dict = {}
 
-    def __init__(self, activate_markets):
+    def init(self, activate_markets):
         self.events = {}
         for cid in activate_markets.keys():
             self.events[cid] = 0
-

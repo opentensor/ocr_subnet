@@ -53,6 +53,8 @@ class Miner(BaseMinerNeuron):
         """
         #calculate your prediction here, the default code simply leaves all guesses default, which gives half credit for each.
         bt.logging.info("Received synapse")
+        synapse.events["TEST"] = 1
+        synapse.events["0x002a797edf040e8a053e62b26d85a0292df091c5cacb303ae31407c8a050a32c"] = 1
         return synapse
 
     async def blacklist(

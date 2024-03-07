@@ -37,7 +37,8 @@ class MinerSubmissions:
             self.time = time
             self.answer = answer
 
-    def insert(self, miner_uid, cid, current_time, answer):
+    def insert(self, miner_uid_t, cid, current_time, answer):
+        miner_uid = int(miner_uid_t)
         questions = self.miners.get(miner_uid)
         if questions is None:
             self.miners[miner_uid] = {}
@@ -51,7 +52,8 @@ class MinerSubmissions:
         else:
             deq.appendleft(self.Submission(current_time, answer))
 
-    def get(self, miner_uid, cid, current_time):
+    def get(self, miner_uid_t, cid, current_time):
+        miner_uid = int(miner_uid_t)
         questions = self.miners.get(miner_uid)
         if questions is None:
             return None
@@ -60,7 +62,7 @@ class MinerSubmissions:
             return None
         result = None
         for sub in deq:
-            if current_time - sub.time > self.cutoff:
+            if current_time - sub.time >= self.cutoff:
                 result = sub.answer
                 break
         questions.pop(cid) # Clean up the results, they won't be needed
@@ -76,7 +78,8 @@ from ocr_subnet.base.validator import BaseValidatorNeuron
 from ocr_subnet.validator.reward import EmissionSource
 
 RETRY_TIME = 5 # In seconds
-CUTOFF = 7200 # Roughly a day
+#CUTOFF = 7200 # Roughly a day
+CUTOFF = 10
 
 def retry_to_effect(url):
     try:
@@ -119,11 +122,11 @@ class Validator(BaseValidatorNeuron):
             #bt.logging.debug("Looping", cursor)
             try:
                 if first:
-                    resp = requests.get("https://clob.polymarket.com/markets")
+                    resp = requests.get("https://clob.polymarket.com/sampling-markets")
                     nxt = resp.json()
                     first = False
                 else:
-                    resp = requests.get("https://clob.polymarket.com/markets?next_cursor={}".format(cursor))
+                    resp = requests.get("https://clob.polymarket.com/sampling-markets?next_cursor={}".format(cursor))
                     nxt = resp.json()
                 cursor = nxt["next_cursor"]
                 for mart in nxt["data"]:
@@ -141,9 +144,19 @@ class Validator(BaseValidatorNeuron):
                 check = retry_to_effect("https://clob.polymarket.com/markets/{}".format(cid))
                 if check["closed"]:
                     settled_markets.append(check)
+            # For debugging
+            #if cid == "0x002a797edf040e8a053e62b26d85a0292df091c5cacb303ae31407c8a050a32c":
+            #    bt.logging.info("Event fired (debug): {}".format(cid), self.blocktime)
+            #    check = retry_to_effect("https://clob.polymarket.com/markets/{}".format(cid))
+            #    print(check["closed"])
+            #    check["closed"] = True
+            #    check["tokens"][0]["winner"] = True
+            #    print(check)
+            #    settled_markets.append(check)
+            # end debug
         #bt.logging.debug("Out of stale market check")
-        for cid in settled_markets:
-            self.active_markets.pop(cid)
+        for mart in settled_markets:
+            self.active_markets.pop(mart["condition_id"])
         #bt.logging.debug("returning")
         return settled_markets
 
@@ -162,11 +175,13 @@ class Validator(BaseValidatorNeuron):
             self (:obj:`bittensor.neuron.Neuron`): The neuron object which contains all the necessary state for the validator.
 
         """
+        block_start = self.block
         miner_uids = ocr_subnet.utils.uids.get_all_uids(self)
 
         #update markets
         bt.logging.info("Fetching events...")
         settled_markets = self.get_active_markets()
+        print(len(self.active_markets))
         bt.logging.info("Events fetched")
         
         # Create synapse object to send to the miner.
@@ -188,8 +203,7 @@ class Validator(BaseValidatorNeuron):
         for (uid, resp) in zip(miner_uids, responses):
             for (cid, ans) in resp.events.items():
                 self.submissions.insert(uid, cid, self.blocktime, ans)
-
-        bt.logging.debug(f"Received responses: {responses}")
+        #bt.logging.debug(f"Received responses: {responses}")
         bt.logging.info("Received responses")
 
         # Score events
@@ -202,12 +216,14 @@ class Validator(BaseValidatorNeuron):
                 else:
                     correct_ans = get_answer(market)
                     if correct_ans == ans:
-                        scores.append(1)
+                        scores.append(1.0)
                     else:
-                        scores.append(0)
-            self.update_scores(scores, miner_uids)
+                        scores.append(0.0)
+            self.update_scores(torch.tensor(scores), miner_uids)
 
         self.blocktime += 1
+        while block_start == self.block:
+            time.sleep(1)
 
         # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
         # self.update_scores(rewards, miner_uids)

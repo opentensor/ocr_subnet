@@ -18,39 +18,15 @@
 
 import bittensor as bt
 from typing import Optional, List
-import struct
-import hashlib
-import base64
-from torch import FloatTensor
-
-def hash_tensor(emission):
-    bytes = b''
-    for f in emission:
-        bytes += struct.pack("f",f)
-    return base64.encodebytes(hashlib.sha256(bytes).digest())
     
-class EmissionSynapse(bt.Synapse):
+class EventPredictionSynapse(bt.Synapse):
+    # Dictionary of predictions. The keys are Polymarket condition IDs, the values are one of:
+    # 0 - No guess
+    # 1 - Guess first possibility (see https://clob.polymarket.com/markets/<cid>)
+    # 2 - Guess second possibility
+    events: dict = {}
 
-    # Required request input, filled by sending dendrite caller.
-    statement: str
-
-    # Optional request outputs, filled by receiving axon. 
-    # Do not write to these directly, use the provided methods.
-    response_tensor: Optional[List[float]] = None
-    response_hash: Optional[bytes] = None
-
-    def insert_hash_tensor(self, emission: FloatTensor):
-        """Inserts a prediction for the next block into the synapse"""
-        self.response_hash = hash_tensor(emission)
-
-    def insert_tensor(self, emission: FloatTensor):
-        """Inserts the tensor which was sent as a prediction in the previous block into the synapse"""
-        if emission is None:
-            return
-        self.response_tensor = emission.tolist()
-
-    def deserialize(self) -> str:
-        """
-        Deserialize the miner response.
-        """
-        return hash_tensor(self.response)
+    def init(self, activate_markets):
+        self.events = {}
+        for cid in activate_markets.keys():
+            self.events[cid] = 0

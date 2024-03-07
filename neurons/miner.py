@@ -46,22 +46,19 @@ class Miner(BaseMinerNeuron):
 
 
     async def forward(
-        self, synapse: ocr_subnet.protocol.EmissionSynapse
-    ) -> ocr_subnet.protocol.EmissionSynapse:
+        self, synapse: ocr_subnet.protocol.EventPredictionSynapse
+    ) -> ocr_subnet.protocol.EventPredictionSynapse:
         """
         Processes the incoming synapse and attaches the response to the synapse.
         """
-        #calculate your prediction here, the default code calculates the current emission
-        predicted_emission = self.default_emission - self.default_emission # 0 tensor of the appropriate length is a reasonable guess
-        synapse.insert_hash_tensor(predicted_emission)
-
-        prev_emission = self.prev_emission
-        self.prev_emission = predicted_emission
-        synapse.insert_tensor(prev_emission)
+        #calculate your prediction here, the default code simply leaves all guesses default, which gives half credit for each.
+        bt.logging.info("Received synapse")
+        synapse.events["TEST"] = 1
+        synapse.events["0x002a797edf040e8a053e62b26d85a0292df091c5cacb303ae31407c8a050a32c"] = 1
         return synapse
 
     async def blacklist(
-        self, synapse: ocr_subnet.protocol.EmissionSynapse
+        self, synapse: ocr_subnet.protocol.EventPredictionSynapse
     ) -> typing.Tuple[bool, str]:
         """
         Determines whether an incoming request should be blacklisted and thus ignored. Your implementation should
@@ -72,7 +69,7 @@ class Miner(BaseMinerNeuron):
         requests before they are deserialized to avoid wasting resources on requests that will be ignored.
 
         Args:
-            synapse (template.protocol.EmissionSynapse): A synapse object constructed from the headers of the incoming request.
+            synapse (template.protocol.EventPredictionSynapse): A synapse object constructed from the headers of the incoming request.
 
         Returns:
             Tuple[bool, str]: A tuple containing a boolean indicating whether the synapse's hotkey is blacklisted,
@@ -105,7 +102,7 @@ class Miner(BaseMinerNeuron):
         )
         return False, "Hotkey recognized!"
 
-    async def priority(self, synapse: ocr_subnet.protocol.EmissionSynapse) -> float:
+    async def priority(self, synapse: ocr_subnet.protocol.EventPredictionSynapse) -> float:
         """
         The priority function determines the order in which requests are handled. More valuable or higher-priority
         requests are processed before others. You should design your own priority mechanism with care.
@@ -113,7 +110,7 @@ class Miner(BaseMinerNeuron):
         This implementation assigns priority to incoming requests based on the calling entity's stake in the metagraph.
 
         Args:
-            synapse (template.protocol.EmissionSynapse): The synapse object that contains metadata about the incoming request.
+            synapse (template.protocol.EventPredictionSynapse): The synapse object that contains metadata about the incoming request.
 
         Returns:
             float: A priority score derived from the stake of the calling entity.

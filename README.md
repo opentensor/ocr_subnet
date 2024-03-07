@@ -4,6 +4,7 @@
 
 ## Forecasting of future world events 
 *We are still in v0 but should upgrade the repo very soon*
+
 We incentivize the prediction of future events. We currently restrict the space to binary future events listed on Polymarket. Miners compete by sending to the validators a vector of probabilities for each event that we support. 
 For example, for two binary events $E_1$ and $E_2$ a miner would submit a vector $(p_1, p_2)$ with $p_i$ the probability that $E_i$ is realized. For example, $E_1$ could be *SBF is sentenced to life*.  
 In the future, any headline of the WSJ could be an event on which a miner could be evaluated upon. 

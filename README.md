@@ -56,11 +56,11 @@ Denote by $S(p_j, o_i) = (o_i - p_i)^2$ the quadratic scoring rule for a predict
 
 
 We implement a sequentially shared quadratic scoring rule. This allows us to score $0$ miners that do not bring new information to the market, as well as to bring value by aggregating information. 
-This functions by scoring each miner relatively to the previous one. The score of the miner $j$ is then $ S_j = S(p_j, o_i) - S(p_{j-1}, o_i)$ where $p_{j-1}$ is the submission of the previous miner. Importantly this payoff can be negative, therefore in practice when aggregating the scores of a miner we add a $\max(-,0)$ operation. 
+This functions by scoring each miner relatively to the previous one. The score of the miner $j$ is then $S_j = S(p_j, o_i) - S(p_{j-1}, o_i)$ where $p_{j-1}$ is the submission of the previous miner. Importantly this payoff can be negative, therefore in practice when aggregating the scores of a miner we add a $\max(-,0)$ operation. 
 
 The aggregated score of a miner that a validator sends to the blockchain is the following:
 
-$$ \frac{1}{N} \sum_j S_j$$
+$$\frac{1}{N} \sum_j S_j$$
 where $N$ is the number of events that the subnet registered as settled during the tempo.
 
 We give miners a score of $0$ on the events for which they did not submit a prediction.

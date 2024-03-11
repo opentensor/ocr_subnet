@@ -20,13 +20,13 @@ import bittensor as bt
 from typing import Optional, List
     
 class EventPredictionSynapse(bt.Synapse):
-    # Dictionary of predictions. The keys are Polymarket condition IDs, the values are one of:
-    # 0 - No guess
-    # 1 - Guess first possibility (see https://clob.polymarket.com/markets/<cid>)
-    # 2 - Guess second possibility
+    # Dictionary of predictions. The keys are Polymarket condition
+    # IDs, the values are the probability of the *second* result
+    # occurring, so certainty that the first result occurs would be 0.0
+
     events: dict = {}
 
     def init(self, activate_markets):
         self.events = {}
         for cid in activate_markets.keys():
-            self.events[cid] = 0
+            self.events[cid] = 0.5

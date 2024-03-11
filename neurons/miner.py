@@ -51,10 +51,10 @@ class Miner(BaseMinerNeuron):
         """
         Processes the incoming synapse and attaches the response to the synapse.
         """
-        #calculate your prediction here, the default code simply leaves all guesses default, which gives half credit for each.
+        #calculate your prediction here, the default code simply leaves all guesses default, which gives 0.25 credit for each.
         bt.logging.info("Received synapse")
-        synapse.events["TEST"] = 1
-        synapse.events["0x002a797edf040e8a053e62b26d85a0292df091c5cacb303ae31407c8a050a32c"] = 1
+        synapse.events["TEST"] = 1.0
+        synapse.events["0x002a797edf040e8a053e62b26d85a0292df091c5cacb303ae31407c8a050a32c"] = 1.0
         return synapse
 
     async def blacklist(

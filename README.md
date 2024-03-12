@@ -1,6 +1,6 @@
 <div align="left">
   
-# Forecasting of future world events
+# Forecasting of future events
 
 ## Problem
 

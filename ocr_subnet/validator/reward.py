@@ -18,6 +18,7 @@
 import torch
 import bittensor as bt
 from typing import List
+import editdistance
 
 from scipy.optimize import linear_sum_assignment
 

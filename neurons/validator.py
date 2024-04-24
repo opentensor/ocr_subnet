@@ -212,8 +212,8 @@ class Validator(BaseValidatorNeuron):
             for uid in miner_uids:
                 ans = self.submissions.get(uid, market["condition_id"], self.blocktime)
                 ans = max(0, min(1, ans)) # Clamp the answer
-                if ans is None or ans == 0.5:
-                    scores.append(0.5)
+                if ans is None:
+                    scores.append(0)
                 else:
                     correct_ans = get_answer(market)
                     if correct_ans == 2:
@@ -221,7 +221,7 @@ class Validator(BaseValidatorNeuron):
                     elif correct_ans == 1:
                         scores.append((1-ans)**2)
                     else:
-                        scores.append(0.5)
+                        scores.append(0)
                         bt.logging.warning("Unknown result: {}".format(market["condition_id"]))
             self.update_scores(torch.tensor(scores), miner_uids)
 

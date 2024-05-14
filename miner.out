@@ -1,0 +1,89 @@
+/home/adam/infinite_games/venv/lib/python3.10/site-packages/eth_utils/network.py:44: UserWarning: Network 345 with name 'Yooldo Verse Mainnet' does not have a valid ChainId. eth-typing should be updated with the latest networks.
+  warnings.warn(
+/home/adam/infinite_games/venv/lib/python3.10/site-packages/eth_utils/network.py:44: UserWarning: Network 12611 with name 'Astar zkEVM' does not have a valid ChainId. eth-typing should be updated with the latest networks.
+  warnings.warn(
+full path: /home/adam/.bittensor/miners/coldkey/hotkey/netuid143/validator
+[34m2024-04-30 19:59:40.780[0m | [1m      INFO      [0m | 
+no_prompt: false
+wallet:
+  name: coldkey
+  hotkey: hotkey
+  path: ~/.bittensor/wallets/
+subtensor:
+  network: test
+  chain_endpoint: wss://entrypoint-finney.opentensor.ai:443
+  _mock: false
+logging:
+  debug: true
+  trace: false
+  record_log: false
+  logging_dir: ~/.bittensor/miners
+axon:
+  port: 8091
+  ip: '[::]'
+  external_port: null
+  external_ip: null
+  max_workers: 10
+netuid: 143
+neuron:
+  name: validator
+  device: cpu
+  epoch_length: 100
+  events_retention_size: 2 GB
+  dont_save_events: false
+  num_concurrent_forwards: 1
+  sample_size: 10
+  disable_set_weights: false
+  moving_average_alpha: 0.05
+  axon_off: false
+  vpermit_tao_limit: 4096
+  full_path: /home/adam/.bittensor/miners/coldkey/hotkey/netuid143/validator
+blacklist:
+  force_validator_permit: false
+  allow_non_registered: false
+config: null
+strict: false
+no_version_checking: false
+
+[34m2024-04-30 19:59:40.780[0m | [1m      INFO      [0m | Setting up bittensor objects. 
+[34m2024-04-30 19:59:40.780[0m | [1m      INFO      [0m | Wallet: wallet(coldkey, hotkey, ~/.bittensor/wallets/)
+[34m2024-04-30 19:59:41.301[0m | [1m      INFO      [0m | Connected to test network and wss://test.finney.opentensor.ai:443/.
+[34m2024-04-30 19:59:41.301[0m | [1m      INFO      [0m | Subtensor: subtensor(test, wss://test.finney.opentensor.ai:443/)
+[34m2024-04-30 19:59:44.347[0m | [1m      INFO      [0m | Metagraph: metagraph(netuid:143, n:2, block:1824142, network:test)
+[34m2024-04-30 19:59:45.072[0m | [1m      INFO      [0m | Running neuron on subnet: 143 with uid 0 using network: wss://test.finney.opentensor.ai:443/
+[34m2024-04-30 19:59:45.072[0m | [33m[1m    WARNING     [0m | You are allowing non-validators to send requests to your miner. This is a security risk.
+[34m2024-04-30 19:59:45.238[0m | [1m      INFO      [0m | Attaching forward function to miner axon.
+[34m2024-04-30 19:59:45.243[0m | [1m      INFO      [0m | Axon created: Axon([::], 8091, 5ED6jwDECEmNvSp98R2qyEUPHDv9pi14E6n3TS8CicD6YfhL, stopped, ['Synapse', 'EventPredictionSynapse'])
+[34m2024-04-30 19:59:45.246[0m | [1m      INFO      [0m | You are connecting to finney network with endpoint wss://entrypoint-finney.opentensor.ai:443.
+[34m2024-04-30 19:59:45.246[0m | [33m[1m    WARNING     [0m | We strongly encourage running a local subtensor node whenever possible. This increases decentralization and resilience of the network.
+[34m2024-04-30 19:59:45.246[0m | [33m[1m    WARNING     [0m | In a future release, local subtensor will become the default endpoint. To get ahead of this change, please run a local subtensor node and point to it.
+[34m2024-04-30 19:59:45.869[0m | [1m      INFO      [0m | Connected to finney network and wss://entrypoint-finney.opentensor.ai:443.
+[34m2024-04-30 20:00:00.421[0m | [34m[1m     DEBUG      [0m | Starting miner in background thread.
+[34m2024-04-30 20:00:00.423[0m | [34m[1m     DEBUG      [0m | Started                       
+[34m2024-04-30 20:00:00.423[0m | [1m      INFO      [0m | Miner running...              1714500000.4238684
+[34m2024-04-30 20:00:01.975[0m | [33m[1m    WARNING     [0m | save_state() not implemented for this neuron. You can implement this function to save model checkpoints or other useful data.
+[34m2024-04-30 20:00:01.976[0m | [1m      INFO      [0m | Serving miner axon Axon([::], 8091, 5ED6jwDECEmNvSp98R2qyEUPHDv9pi14E6n3TS8CicD6YfhL, stopped, ['Synapse', 'EventPredictionSynapse']) on network: wss://entrypoint-finney.opentensor.ai:443 with netuid: 143
+[34m2024-04-30 20:00:01.976[0m | [34m[1m     DEBUG      [0m | Checking axon ...             
+[34m2024-04-30 20:00:03.349[0m | [34m[1m     DEBUG      [0m | Axon already served on: AxonInfo(5ED6jwDECEmNvSp98R2qyEUPHDv9pi14E6n3TS8CicD6YfhL,152.53.21.25:8091) 
+[34m2024-04-30 20:00:03.350[0m | [1m      INFO      [0m | Miner starting at block: 1824144
+[34m2024-04-30 20:00:05.429[0m | [1m      INFO      [0m | Miner running...              1714500005.429182
+[34m2024-04-30 20:00:10.162[0m | [31m[1m     ERROR      [0m | NotVerifiedException: Not Verified with error: Signature mismatch with 9069745483030160.5ED6jwDECEmNvSp98R2qyEUPHDv9pi14E6n3TS8CicD6YfhL.5ED6jwDECEmNvSp98R2qyEUPHDv9pi14E6n3TS8CicD6YfhL.696cab58-0715-11ef-8163-e55a5c56524d.a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a and 0x8869d0d49bf615cfbd01da7776808c45d7b87d065c98b34aea9262451973f9711e7358b11ce0f39c849028540f3997a2bd1bdd46c33e9db3b70260d79b44dc8f
+[34m2024-04-30 20:00:10.176[0m | [1m      INFO      [0m | Received synapse              
+[34m2024-04-30 20:00:10.434[0m | [1m      INFO      [0m | Miner running...              1714500010.4348378
+[34m2024-04-30 20:00:15.440[0m | [1m      INFO      [0m | Miner running...              1714500015.4405866
+[34m2024-04-30 20:00:20.446[0m | [1m      INFO      [0m | Miner running...              1714500020.4463496
+[34m2024-04-30 20:00:22.217[0m | [31m[1m     ERROR      [0m | NotVerifiedException: Not Verified with error: Signature mismatch with 9069757543321301.5ED6jwDECEmNvSp98R2qyEUPHDv9pi14E6n3TS8CicD6YfhL.5ED6jwDECEmNvSp98R2qyEUPHDv9pi14E6n3TS8CicD6YfhL.696cab58-0715-11ef-8163-e55a5c56524d.a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a and 0x5e776d835c69966e396d450e334c3d4aaa13e6d7c48815cad2833782aba64e2a1889235f0b8f834993a7d6ff1394a870675bb6299f661e60e3ed98c5839a0b8f
+[34m2024-04-30 20:00:22.228[0m | [1m      INFO      [0m | Received synapse              
+[34m2024-04-30 20:00:25.452[0m | [1m      INFO      [0m | Miner running...              1714500025.4521372
+[34m2024-04-30 20:00:30.458[0m | [1m      INFO      [0m | Miner running...              1714500030.4579673
+[34m2024-04-30 20:00:34.209[0m | [31m[1m     ERROR      [0m | NotVerifiedException: Not Verified with error: Signature mismatch with 9069769536957067.5ED6jwDECEmNvSp98R2qyEUPHDv9pi14E6n3TS8CicD6YfhL.5ED6jwDECEmNvSp98R2qyEUPHDv9pi14E6n3TS8CicD6YfhL.696cab58-0715-11ef-8163-e55a5c56524d.a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a and 0x40d68803e903b80b9287a2dcc22781dbc55059f4ca7b120261c44836cd7a6352446941ada2df5e54ec761f7d0aaa9882eb10e1cd9ddfeffcac53234def39f185
+[34m2024-04-30 20:00:34.220[0m | [1m      INFO      [0m | Received synapse              
+[34m2024-04-30 20:00:35.463[0m | [1m      INFO      [0m | Miner running...              1714500035.4636626
+[34m2024-04-30 20:00:40.469[0m | [1m      INFO      [0m | Miner running...              1714500040.4697263
+[34m2024-04-30 20:00:45.474[0m | [1m      INFO      [0m | Miner running...              1714500045.4748478
+[34m2024-04-30 20:00:46.269[0m | [31m[1m     ERROR      [0m | NotVerifiedException: Not Verified with error: Signature mismatch with 9069781593055831.5ED6jwDECEmNvSp98R2qyEUPHDv9pi14E6n3TS8CicD6YfhL.5ED6jwDECEmNvSp98R2qyEUPHDv9pi14E6n3TS8CicD6YfhL.696cab58-0715-11ef-8163-e55a5c56524d.a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a and 0x9217ed842c93ece72154ff9f32caf98b291af1a2ec3b38e55a9b3e7d3f91b51a0b4afc29499cbae875bd39f1e5bb82c1718e91fe4b9d3117d13fbe30d0204c81
+[34m2024-04-30 20:00:46.283[0m | [1m      INFO      [0m | Received synapse              
+[34m2024-04-30 20:00:50.480[0m | [1m      INFO      [0m | Miner running...              1714500050.4807072
+[34m2024-04-30 20:00:55.486[0m | [1m      INFO      [0m | Miner running...              1714500055.4865344
+[34m2024-04-30 20:00:58.272[0m | [31m[1m     ERROR      [0m | NotVerifiedException: Not Verified with error: Signature mismatch with 9069793590304263.5ED6jwDECEmNvSp98R2qyEUPHDv9pi14E6n3TS8CicD6YfhL.5ED6jwDECEmNvSp98R2qyEUPHDv9pi14E6n3TS8CicD6YfhL.696cab58-0715-11ef-8163-e55a5c56524d.a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a and 0x96c996489e3d482edeeb479bbda8679a24b94ae28704a22f5dfe086d511f1d108b67e32f4a16242e3315d72eb4d1ff049ac9023779ff16633418fa6d63cbe48f
+[34m2024-04-30 20:00:58.286[0m | [1m      INFO      [0m | Received synapse              

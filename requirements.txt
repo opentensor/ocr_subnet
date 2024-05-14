@@ -9,3 +9,4 @@ PyMuPDF
 reportlab
 pdf2image
 editdistance
+loguru

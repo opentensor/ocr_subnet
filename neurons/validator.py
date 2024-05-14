@@ -145,14 +145,14 @@ class Validator(BaseValidatorNeuron):
                 if check["closed"]:
                     settled_markets.append(check)
             # For debugging
-            #if cid == "0x002a797edf040e8a053e62b26d85a0292df091c5cacb303ae31407c8a050a32c":
-            #    bt.logging.info("Event fired (debug): {}".format(cid), self.blocktime)
-            #    check = retry_to_effect("https://clob.polymarket.com/markets/{}".format(cid))
-            #    print(check["closed"])
-            #    check["closed"] = True
-            #    check["tokens"][0]["winner"] = True
-            #    print(check)
-            #    settled_markets.append(check)
+            if cid == "0x002a797edf040e8a053e62b26d85a0292df091c5cacb303ae31407c8a050a32c":
+                bt.logging.info("Event fired (debug): {}".format(cid), self.blocktime)
+                check = retry_to_effect("https://clob.polymarket.com/markets/{}".format(cid))
+                print(check["closed"])
+                check["closed"] = True
+                check["tokens"][0]["winner"] = True
+                print(check)
+                settled_markets.append(check)
             # end debug
         #bt.logging.debug("Out of stale market check")
         for mart in settled_markets:
@@ -181,7 +181,7 @@ class Validator(BaseValidatorNeuron):
         #update markets
         bt.logging.info("Fetching events...")
         settled_markets = self.get_active_markets()
-        print(len(self.active_markets))
+        #print(len(self.active_markets))
         bt.logging.info("Events fetched")
         
         # Create synapse object to send to the miner.

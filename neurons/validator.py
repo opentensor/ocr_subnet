@@ -15,9 +15,11 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+import asyncio
 import os
 import time
 import hashlib
+import aiohttp
 import bittensor as bt
 import torch
 import collections as c
@@ -81,12 +83,13 @@ RETRY_TIME = 5 # In seconds
 #CUTOFF = 7200 # Roughly a day
 CUTOFF = 10
 
-def retry_to_effect(url):
+async def retry_to_effect(session, url):
     try:
-        return requests.get(url).json()
-    except json.decoder.JSONDecodeError:
-        time.sleep(RETRY_TIME)
-        return retry_to_effect(url)
+        async with session.get(url) as response:
+            return await response.json()
+    except Exception as e:
+        await asyncio.sleep(RETRY_TIME)
+
 
 def get_answer(market):
     toks = market["tokens"]
@@ -96,6 +99,26 @@ def get_answer(market):
         return 2
     else:
         return None
+
+
+async def crawl_market(session, cid, seq, blocktime):
+    if seq != blocktime:
+        # Uncomment this to see events fired
+        # bt.logging.info("Event fired: {}".format(cid))
+        check = await retry_to_effect(session, "https://clob.polymarket.com/markets/{}".format(cid))
+        from pprint import pprint
+        print(check.get('market_slug'), 'Ends: ', check.get('end_date_iso'), ' Options: ', ','.join((map(lambda t: t.get('outcome', ''), check.get('tokens', [])))))
+        # pprint(check.get('questions'),check['tokens'])
+        # if cid == "0x002a797edf040e8a053e62b26d85a0292df091c5cacb303ae31407c8a050a32c":
+        #     bt.logging.info("Event fired (debug): {}".format(cid), self.blocktime)
+        #     check = retry_to_effect("https://clob.polymarket.com/markets/{}".format(cid))
+        #     print(check["closed"])
+        #     check["closed"] = True
+        #     check["tokens"][0]["winner"] = True
+        #     print(check)
+        #     settled_markets.append(check)
+        return check
+
 
 class Validator(BaseValidatorNeuron):
     """
@@ -115,7 +138,7 @@ class Validator(BaseValidatorNeuron):
         self.submissions = MinerSubmissions(CUTOFF)
         self.blocktime = 0
 
-    def get_active_markets(self):
+    async def update_markets(self):
         first = True
         cursor = None
         while cursor != "LTE=":
@@ -130,34 +153,28 @@ class Validator(BaseValidatorNeuron):
                     nxt = resp.json()
                 cursor = nxt["next_cursor"]
                 for mart in nxt["data"]:
-                    self.active_markets[mart["condition_id"]] = self.blocktime
+                    if mart['condition_id'] not in self.active_markets:
+                        self.active_markets[mart["condition_id"]] = self.blocktime
             except json.decoder.JSONDecodeError:
                 print("Got error, retrying...")
-                #print(resp.text)
                 time.sleep(3)
-        #bt.logging.debug("Out of market fetch loop")
         settled_markets = []
-        for (cid, seq) in self.active_markets.items():
-            #bt.logging.debug("Looping", cid)
-            if seq != self.blocktime:
-                bt.logging.info("Event fired: {}".format(cid), self.blocktime)
-                check = retry_to_effect("https://clob.polymarket.com/markets/{}".format(cid))
-                if check["closed"]:
-                    settled_markets.append(check)
-            # For debugging
-            if cid == "0x002a797edf040e8a053e62b26d85a0292df091c5cacb303ae31407c8a050a32c":
-                bt.logging.info("Event fired (debug): {}".format(cid), self.blocktime)
-                check = retry_to_effect("https://clob.polymarket.com/markets/{}".format(cid))
-                print(check["closed"])
-                check["closed"] = True
-                check["tokens"][0]["winner"] = True
-                print(check)
-                settled_markets.append(check)
-            # end debug
-        #bt.logging.debug("Out of stale market check")
-        for mart in settled_markets:
-            self.active_markets.pop(mart["condition_id"])
-        #bt.logging.debug("returning")
+        bt.logging.info('Blocktime: %s ', '', '', self.blocktime)
+        # max_events = 10
+        async with aiohttp.ClientSession() as session:
+            markets = await asyncio.gather(*[
+                crawl_market(session, cid, market_blocktime, self.blocktime) for cid, market_blocktime in self.active_markets.items()]
+            )
+        fetched = 0
+        closed = 0
+        for market in markets:
+            if market:
+                fetched += 1
+                if market['closed']:
+                    closed += 1
+                    settled_markets.append(market)
+                    self.active_markets.pop(market["condition_id"])
+        bt.logging.info('Fetched markets: %s, closed: %s', '', '', fetched, closed)
         return settled_markets
 
     async def forward(self):
@@ -166,11 +183,6 @@ class Validator(BaseValidatorNeuron):
         
         COMMENT - we want this to happen every tempo / epoch actually not every time step
 
-        It consists of 3 important steps:
-        - Generate a challenge for the miners (in this case it creates a synthetic invoice image)
-        - Query the miners with the challenge
-        - Score the responses from the miners
-
         Args:
             self (:obj:`bittensor.neuron.Neuron`): The neuron object which contains all the necessary state for the validator.
 
@@ -178,17 +190,19 @@ class Validator(BaseValidatorNeuron):
         block_start = self.block
         miner_uids = ocr_subnet.utils.uids.get_all_uids(self)
 
-        #update markets
-        bt.logging.info("Fetching events...")
-        settled_markets = self.get_active_markets()
-        #print(len(self.active_markets))
-        bt.logging.info("Events fetched")
-        
+        # update markets
+        bt.logging.info("Fetching market events...")
+        settled_markets = await self.update_markets() or []
+        if len(settled_markets) > 0:
+            bt.logging.info('Settled markets: ', '', '', len(settled_markets))
         # Create synapse object to send to the miner.
         synapse = ocr_subnet.protocol.EventPredictionSynapse()
         synapse.init(self.active_markets)
-
-        bt.logging.info("Querying miners...")
+        # print("Synapse body hash", synapse.computed_body_hash)
+        bt.logging.info("Querying miners... ")
+        
+        bt.logging.info(self.metagraph.axons)
+        self.dendrite.forward
         # The dendrite client queries the network.
         responses = self.dendrite.query(
             # Send the query to selected miner axons in the network.
@@ -203,7 +217,6 @@ class Validator(BaseValidatorNeuron):
         for (uid, resp) in zip(miner_uids, responses):
             for (cid, ans) in resp.events.items():
                 self.submissions.insert(uid, cid, self.blocktime, ans)
-        #bt.logging.debug(f"Received responses: {responses}")
         bt.logging.info("Received responses")
 
         # Score events
@@ -234,6 +247,10 @@ class Validator(BaseValidatorNeuron):
 
 
 # The main function parses the configuration and runs the validator.
+
+bt.debug(True)
+
+
 if __name__ == "__main__":
     with Validator() as validator:
         while True:

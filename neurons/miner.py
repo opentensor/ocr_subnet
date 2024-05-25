@@ -55,6 +55,7 @@ class Miner(BaseMinerNeuron):
         bt.logging.info("Received synapse")
         synapse.events["TEST"] = 1.0
         synapse.events["0x002a797edf040e8a053e62b26d85a0292df091c5cacb303ae31407c8a050a32c"] = 1.0
+        synapse.events["hello"] = "hello"
         return synapse
 
     async def blacklist(
@@ -133,6 +134,12 @@ class Miner(BaseMinerNeuron):
             f"Prioritizing {synapse.dendrite.hotkey} with value: ", prirority
         )
         return prirority
+
+    def save_state(self):
+        return super().save_state()
+
+
+bt.debug(True)
 
 
 # This is the main function, which runs the miner.

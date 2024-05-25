@@ -43,12 +43,10 @@ class BaseMinerNeuron(BaseNeuron):
             bt.logging.warning(
                 "You are allowing non-registered entities to send requests to your miner. This is a security risk."
             )
-
         # The axon handles request processing, allowing validators to send this miner requests.
         self.axon = bt.axon(wallet=self.wallet, port=self.config.axon.port)
-
         # Attach determiners which functions are called when servicing a request.
-        bt.logging.info(f"Attaching forward function to miner axon.")
+        bt.logging.info(f"Attaching  function to miner axon.")
         self.axon.attach(
             forward_fn=self.forward,
             blacklist_fn=self.blacklist,
@@ -113,7 +111,6 @@ class BaseMinerNeuron(BaseNeuron):
                     # Check if we should exit.
                     if self.should_exit:
                         break
-
                 # Sync metagraph and potentially set weights.
                 self.sync()
                 self.step += 1

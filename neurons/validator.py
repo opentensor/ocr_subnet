@@ -106,6 +106,9 @@ async def crawl_market(session, cid, seq, blocktime):
         # Uncomment this to see events fired
         # bt.logging.info("Event fired: {}".format(cid))
         check = await retry_to_effect(session, "https://clob.polymarket.com/markets/{}".format(cid))
+        from pprint import pprint
+        print(check.get('market_slug'), 'Ends: ', check.get('end_date_iso'), ' Options: ', ','.join((map(lambda t: t.get('outcome', ''), check.get('tokens', [])))))
+        # pprint(check.get('questions'),check['tokens'])
         # if cid == "0x002a797edf040e8a053e62b26d85a0292df091c5cacb303ae31407c8a050a32c":
         #     bt.logging.info("Event fired (debug): {}".format(cid), self.blocktime)
         #     check = retry_to_effect("https://clob.polymarket.com/markets/{}".format(cid))

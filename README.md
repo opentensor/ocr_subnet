@@ -108,8 +108,6 @@ We would also possibly like to make the prediction framework more LLM specific a
 
 We plan to extend the set of predicted events to other prediction markets and event providers (Metacalculus, Azuro). Our goal is to obtain a continuous feed of organic events by using e.g Reuters' API or WSJ headlines. 
 
-We aim at substantially developing the prediction framework in the future by allowing for example for combinatorial updates i.e the ability for miners to add conditional logic to their prediction e.g *if the aggregated probability of event X passes a threshold Y, make prediction Z*. 
-
 <!-- In the limit, miners could update the weights of an entire LLM.-->
 
 

@@ -73,11 +73,11 @@ class MinerSubmissions:
 
     
 
-import ocr_subnet
+import infinite_games
 
 # import base validator class which takes care of most of the boilerplate
-from ocr_subnet.base.validator import BaseValidatorNeuron
-from ocr_subnet.validator.reward import EmissionSource
+from infinite_games.base.validator import BaseValidatorNeuron
+from infinite_games.validator.reward import EmissionSource
 
 RETRY_TIME = 5 # In seconds
 #CUTOFF = 7200 # Roughly a day
@@ -188,7 +188,7 @@ class Validator(BaseValidatorNeuron):
 
         """
         block_start = self.block
-        miner_uids = ocr_subnet.utils.uids.get_all_uids(self)
+        miner_uids = infinite_games.utils.uids.get_all_uids(self)
 
         # update markets
         bt.logging.info("Fetching market events...")
@@ -196,7 +196,7 @@ class Validator(BaseValidatorNeuron):
         if len(settled_markets) > 0:
             bt.logging.info(f'Settled markets: {settled_markets}')
         # Create synapse object to send to the miner.
-        synapse = ocr_subnet.protocol.EventPredictionSynapse()
+        synapse = infinite_games.protocol.EventPredictionSynapse()
         synapse.init(self.active_markets)
         # print("Synapse body hash", synapse.computed_body_hash)
         bt.logging.info("Querying miners... ")

@@ -23,9 +23,9 @@ import bittensor as bt
 from abc import ABC, abstractmethod
 
 # Sync calls set weights and also resyncs the metagraph.
-from ocr_subnet.utils.config import check_config, add_args, config
-from ocr_subnet.utils.misc import ttl_get_block
-from ocr_subnet import __spec_version__ as spec_version
+from infinite_games.utils.config import check_config, add_args, config
+from infinite_games.utils.misc import ttl_get_block
+from infinite_games import __spec_version__ as spec_version
 
 
 class BaseNeuron(ABC):

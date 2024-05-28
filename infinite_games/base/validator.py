@@ -25,7 +25,7 @@ import bittensor as bt
 from typing import List
 from traceback import print_exception
 
-from ocr_subnet.base.neuron import BaseNeuron
+from infinite_games.base.neuron import BaseNeuron
 
 
 class BaseValidatorNeuron(BaseNeuron):

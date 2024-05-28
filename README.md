@@ -124,6 +124,46 @@ First clone this repo by running `git clone https://github.com/amedeo-gigaver/in
 5. Run the appropriate script, replacing values in curly brackets: `python neurons/{miner}.py --netuid 30  --wallet.name {default} --wallet.hotkey {default}`
 6. The venv should be active whenever the neurons are run.
 
+### PM2 Installation
+
+Install and run pm2 commands to keep your miner and validator online at all times.
+
+
+`sudo apt update`
+
+`sudo apt install npm` 
+
+`sudo npm install pm2 -g`
+
+`Confirm pm2 is installed and running correctly`
+
+`pm2 ls`
+
+
+Example Command for validator
+
+`pm2 start neurons/validator.py --interpreter /usr/bin/python3  --name validator -- --wallet.name validator --netuid 155 --wallet.hotkey hotkey --subtensor.network testnet --logging.debug` 
+
+Example Command for miner
+
+`pm2 start neurons/miner.py --interpreter /usr/bin/python3  --name miner -- --wallet.name miner --netuid 155 --wallet.hotkey hotkey --subtensor.network testnet --logging.debug`
+
+Variable Explanation
+
+--wallet.name: Provide the name of your wallet.
+--wallet.hotkey: Enter your wallet's hotkey.
+--netuid: Use 155 for testnet.
+--subtensor.network: Specify the network you want to use (finney, test, local, etc).
+--logging.debug: Adjust the logging level according to your preference.
+--axon.port: Specify the port number you want to use.
+--neuron.name: Trials for this miner go in miner.root / (wallet_cold - wallet_hot) / miner.name.
+--neuron.device: Device to run the validator on. cuda or cpu
+
+Monitor the status and logs:
+
+`pm2 status`
+`pm2 logs 0`
+
 ### Computational requirements
 
 Currently the requirements are minimal for a validator and depend on the model used for the miner. We will update this section regularly.

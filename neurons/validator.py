@@ -159,7 +159,7 @@ class Validator(BaseValidatorNeuron):
                 print("Got error, retrying...")
                 time.sleep(3)
         settled_markets = []
-        bt.logging.info('Blocktime: %s ', '', '', self.blocktime)
+        bt.logging.info(f'Blocktime: {self.blocktime} ')
         # max_events = 10
         async with aiohttp.ClientSession() as session:
             markets = await asyncio.gather(*[
@@ -174,7 +174,7 @@ class Validator(BaseValidatorNeuron):
                     closed += 1
                     settled_markets.append(market)
                     self.active_markets.pop(market["condition_id"])
-        bt.logging.info('Fetched markets: %s, closed: %s', '', '', fetched, closed)
+        bt.logging.info(f'Fetched markets: {fetched}, closed: {closed}')
         return settled_markets
 
     async def forward(self):
@@ -194,7 +194,7 @@ class Validator(BaseValidatorNeuron):
         bt.logging.info("Fetching market events...")
         settled_markets = await self.update_markets() or []
         if len(settled_markets) > 0:
-            bt.logging.info('Settled markets: ', '', '', len(settled_markets))
+            bt.logging.info(f'Settled markets: {settled_markets}')
         # Create synapse object to send to the miner.
         synapse = ocr_subnet.protocol.EventPredictionSynapse()
         synapse.init(self.active_markets)

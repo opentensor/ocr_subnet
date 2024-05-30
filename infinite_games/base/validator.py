@@ -67,7 +67,7 @@ class BaseValidatorNeuron(BaseNeuron):
         self.thread: threading.Thread = None
         self.lock = asyncio.Lock()
         self.wandb_run = wandb.init(
-            name="hellorun",
+            name=self.wallet.hotkey.ss58_address,
             project="infinite_games",
             config={
             }

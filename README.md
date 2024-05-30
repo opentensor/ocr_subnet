@@ -5,7 +5,7 @@
 # **Infinite Games** 
 
 
-[Discord](https://discord.gg/eZaZ6unD) • [Incentized Testnet](https://tally.so/r/wkYDqo) •
+[Discord](https://discord.gg/eZaZ6unD) • [Incentivized Testnet](https://tally.so/r/wkYDqo) •
 [Website](https://www.infinitegam.es/) • [Twitter](https://twitter.com/Playinfgames) • [Network](https://taostats.io/) 
 
 ---

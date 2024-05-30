@@ -16,7 +16,9 @@
 # DEALINGS IN THE SOFTWARE.
 
 import asyncio
+import datetime
 import os
+import random
 import time
 import hashlib
 import aiohttp
@@ -25,6 +27,10 @@ import torch
 import collections as c
 import requests
 import json
+
+
+import wandb
+
 
 class MinerSubmissions:
     """
@@ -106,17 +112,18 @@ async def crawl_market(session, cid, seq, blocktime):
         # Uncomment this to see events fired
         # bt.logging.info("Event fired: {}".format(cid))
         check = await retry_to_effect(session, "https://clob.polymarket.com/markets/{}".format(cid))
-        from pprint import pprint
-        print(check.get('market_slug'), 'Ends: ', check.get('end_date_iso'), ' Options: ', ','.join((map(lambda t: t.get('outcome', ''), check.get('tokens', [])))))
+        # from pprint import pprint
+        # pprint(check)
+        # print(check.get('market_slug'), 'Ends: ', check.get('end_date_iso'), ' Options: ', ','.join((map(lambda t: t.get('outcome', ''), check.get('tokens', [])))))
+
         # pprint(check.get('questions'),check['tokens'])
         # if cid == "0x002a797edf040e8a053e62b26d85a0292df091c5cacb303ae31407c8a050a32c":
-        #     bt.logging.info("Event fired (debug): {}".format(cid), self.blocktime)
-        #     check = retry_to_effect("https://clob.polymarket.com/markets/{}".format(cid))
-        #     print(check["closed"])
-        #     check["closed"] = True
-        #     check["tokens"][0]["winner"] = True
-        #     print(check)
-        #     settled_markets.append(check)
+        if check.get('market_slug') == "will-a-republican-win-maryland-us-senate-election":
+            bt.logging.info("Event resolved (debug): {}".format(cid))
+            check["closed"] = True
+            check["tokens"][0]["winner"] = True
+            # print(check)
+            # settled_markets.append(check)
         return check
 
 
@@ -187,22 +194,25 @@ class Validator(BaseValidatorNeuron):
             self (:obj:`bittensor.neuron.Neuron`): The neuron object which contains all the necessary state for the validator.
 
         """
+
         block_start = self.block
         miner_uids = infinite_games.utils.uids.get_all_uids(self)
-
+        
         # update markets
         bt.logging.info("Fetching market events...")
         settled_markets = await self.update_markets() or []
         if len(settled_markets) > 0:
-            bt.logging.info(f'Settled markets: {settled_markets}')
+            bt.logging.info(f'Settled markets: {len(settled_markets)}')
         # Create synapse object to send to the miner.
         synapse = infinite_games.protocol.EventPredictionSynapse()
         synapse.init(self.active_markets)
         # print("Synapse body hash", synapse.computed_body_hash)
+        bt.logging.info(f'Axons: {len(self.metagraph.axons)}')
+        for axon in self.metagraph.axons:
+
+            bt.logging.info(f'IP: {axon.ip}, hotkey id: {axon.hotkey}')
+
         bt.logging.info("Querying miners... ")
-        
-        bt.logging.info(self.metagraph.axons)
-        self.dendrite.forward
         # The dendrite client queries the network.
         responses = self.dendrite.query(
             # Send the query to selected miner axons in the network.
@@ -220,14 +230,18 @@ class Validator(BaseValidatorNeuron):
         bt.logging.info("Received responses")
 
         # Score events
+        
         for market in settled_markets:
             scores = []
             for uid in miner_uids:
                 ans = self.submissions.get(uid, market["condition_id"], self.blocktime)
-                ans = max(0, min(1, ans)) # Clamp the answer
                 if ans is None:
-                    scores.append(0)
+                    if True:
+                        scores.append(random.random() / 10)
+                    else:
+                        scores.append(0)
                 else:
+                    ans = max(0, min(1, ans))  # Clamp the answer
                     correct_ans = get_answer(market)
                     if correct_ans == 2:
                         scores.append(ans**2)
@@ -236,8 +250,18 @@ class Validator(BaseValidatorNeuron):
                     else:
                         scores.append(0)
                         bt.logging.warning("Unknown result: {}".format(market["condition_id"]))
-            self.update_scores(torch.tensor(scores), miner_uids)
-
+            self.update_scores(torch.FloatTensor(scores), miner_uids)
+        self.wandb_run.log(
+            {
+                'local_blocktime': self.blocktime,
+                'block': self.block,
+                # 'time': time.time(),
+                'total_score': sum(list(self.scores.tolist())),
+                'validator': self.wallet.hotkey.ss58_address,
+                'block_scores': wandb.Table(columns=['scores', 'miners'], data=list(zip(self.scores.tolist(), miner_uids.tolist())))
+            },
+            # step=int(time.time())
+        )
         self.blocktime += 1
         while block_start == self.block:
             time.sleep(1)
@@ -249,8 +273,6 @@ class Validator(BaseValidatorNeuron):
 # The main function parses the configuration and runs the validator.
 
 bt.debug(True)
-
-
 if __name__ == "__main__":
     with Validator() as validator:
         while True:

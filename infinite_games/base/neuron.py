@@ -118,6 +118,7 @@ class BaseNeuron(ABC):
             self.resync_metagraph()
 
         if self.should_set_weights():
+            bt.logging.info('********* SUBMIT WEIGHTS *********')
             self.set_weights()
 
         # Always save state.
@@ -150,12 +151,13 @@ class BaseNeuron(ABC):
 
         # Check if enough epoch blocks have elapsed since the last epoch.
         if self.config.neuron.disable_set_weights:
+            bt.logging.info('self.config.neuron.disable_set_weights enabled from cli: skip set weight')
             return False
 
         # Define appropriate logic for when set weights.
-        return (
-            self.block - self.metagraph.last_update[self.uid]
-        ) > self.config.neuron.epoch_length
+        should_set_weight = (self.block - self.metagraph.last_update[self.uid]) > self.config.neuron.epoch_length
+        bt.logging.info(f'Weight / Current: {self.block}, Last : {self.metagraph.last_update[self.uid]} Epoch length: {self.config.neuron.epoch_length}, should set: {should_set_weight}')
+        return should_set_weight
 
     def save_state(self):
         bt.logging.warning(

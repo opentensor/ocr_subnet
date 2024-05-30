@@ -25,6 +25,8 @@ import bittensor as bt
 from typing import List
 from traceback import print_exception
 
+import wandb
+
 from infinite_games.base.neuron import BaseNeuron
 
 
@@ -64,6 +66,12 @@ class BaseValidatorNeuron(BaseNeuron):
         self.is_running: bool = False
         self.thread: threading.Thread = None
         self.lock = asyncio.Lock()
+        self.wandb_run = wandb.init(
+            name="hellorun",
+            project="infinite_games",
+            config={
+            }
+        )
 
     def serve_axon(self):
         """Serve axon to enable external connections."""
@@ -172,6 +180,7 @@ class BaseValidatorNeuron(BaseNeuron):
         """
         if self.is_running:
             bt.logging.debug("Stopping validator in background thread.")
+            self.wandb_run.finish()
             self.should_exit = True
             self.thread.join(5)
             self.is_running = False

@@ -16,20 +16,14 @@
 # DEALINGS IN THE SOFTWARE.
 
 import asyncio
-import datetime
-import os
 import random
 import time
-import hashlib
 import aiohttp
 import bittensor as bt
 import torch
 import collections as c
 import requests
 import json
-
-
-import wandb
 
 
 class MinerSubmissions:
@@ -230,7 +224,6 @@ class Validator(BaseValidatorNeuron):
         bt.logging.info("Received responses")
 
         # Score events
-        
         for market in settled_markets:
             scores = []
             for uid in miner_uids:
@@ -251,17 +244,6 @@ class Validator(BaseValidatorNeuron):
                         scores.append(0)
                         bt.logging.warning("Unknown result: {}".format(market["condition_id"]))
             self.update_scores(torch.FloatTensor(scores), miner_uids)
-        self.wandb_run.log(
-            {
-                'local_blocktime': self.blocktime,
-                'block': self.block,
-                # 'time': time.time(),
-                'total_score': sum(list(self.scores.tolist())),
-                'validator': self.wallet.hotkey.ss58_address,
-                'block_scores': wandb.Table(columns=['scores', 'miners'], data=list(zip(self.scores.tolist(), miner_uids.tolist())))
-            },
-            # step=int(time.time())
-        )
         self.blocktime += 1
         while block_start == self.block:
             time.sleep(1)

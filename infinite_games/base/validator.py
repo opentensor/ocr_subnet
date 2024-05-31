@@ -17,6 +17,7 @@
 
 
 import copy
+import requests
 import torch
 import asyncio
 import threading
@@ -28,6 +29,7 @@ from traceback import print_exception
 import wandb
 
 from infinite_games.base.neuron import BaseNeuron
+
 
 
 class BaseValidatorNeuron(BaseNeuron):
@@ -66,12 +68,17 @@ class BaseValidatorNeuron(BaseNeuron):
         self.is_running: bool = False
         self.thread: threading.Thread = None
         self.lock = asyncio.Lock()
-        self.wandb_run = wandb.init(
-            name=self.wallet.hotkey.ss58_address,
-            project="infinite_games",
-            config={
-            }
-        )
+
+        self.USER_ID = 1609875
+        self.API_KEY = "glc_eyJvIjoiMTEzODU0OSIsIm4iOiJzdGFjay05NDcwOTMtaW50ZWdyYXRpb24tdmFsaWRhdG9yX3Rva2VucyIsImsiOiJaV2pINUZvMDJIOHJXNzF2NzVqZzMxaksiLCJtIjp7InIiOiJwcm9kLWV1LW5vcnRoLTAifX0="
+
+
+        # self.wandb_run = wandb.init(
+        #     name=self.wallet.hotkey.ss58_address,
+        #     project="infinite_games",
+        #     config={
+        #     }
+        # )
 
     def serve_axon(self):
         """Serve axon to enable external connections."""
@@ -313,6 +320,39 @@ class BaseValidatorNeuron(BaseNeuron):
             1 - alpha
         ) * self.scores.to(self.device)
         bt.logging.debug(f"Updated moving avg scores: {self.scores}")
+
+        self.send_metrics(miner_scores=list(zip(uids, rewards.tolist())))
+
+    def send_metrics(self, miner_scores=None, additional_metrics=None):
+        # scores_list = self.scores.tolist()
+        additional_metrics_string = ''
+        if additional_metrics:
+            for metric_name, metric_value in additional_metrics.items():
+                additional_metrics_string += f'summary,bar_label={metric_name},source={self.wallet.hotkey.ss58_address} metric={metric_value}\n'
+
+        miner_logs = ''
+        if miner_scores:
+
+            for miner_id, score in miner_scores:
+                miner_logs += f'miners,bar_label=weights,validator={self.wallet.hotkey.ss58_address},source={miner_id} metric={score}\n'
+
+        body = f'''
+        {additional_metrics_string}
+        summary,bar_label=globalblock,source={self.wallet.hotkey.ss58_address} metric={self.block}
+        {miner_logs}
+        '''
+
+        response = requests.post('https://influx-prod-39-prod-eu-north-0.grafana.net/api/v1/push/influx/write', 
+                                    headers = {
+                                    'Content-Type': 'text/plain',
+                                    },
+                                    data = str(body),
+                                    auth = (self.USER_ID, self.API_KEY)
+        )
+
+        status_code = response.status_code
+        if status_code != 204:
+            bt.logging.error(f'*** Error sending logs! {response.content.decode("utf8")}')
 
     def save_state(self):
         """Saves the state of the validator to a file."""

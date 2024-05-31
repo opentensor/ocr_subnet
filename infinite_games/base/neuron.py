@@ -16,11 +16,11 @@
 # DEALINGS IN THE SOFTWARE.
 
 import copy
-import typing
 
 import bittensor as bt
 
 from abc import ABC, abstractmethod
+
 
 # Sync calls set weights and also resyncs the metagraph.
 from infinite_games.utils.config import check_config, add_args, config

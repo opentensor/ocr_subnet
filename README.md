@@ -113,60 +113,7 @@ We plan to extend the set of predicted events to other prediction markets and ev
 
 ## Running a miner or validator
 
-The miner and validator logic is contained in the appropriate files in `neuron`. As a miner you should implement your prediction strategy in the `forward` function. For a validator the provided script should be enough. 
-
-First clone this repo by running `git clone https://github.com/amedeo-gigaver/infinite_games.git`. Then to run a miner or validator:
-
-1. Set up a venv: `python -m venv venv` and activate: `source venv/bin/activate`
-2. Set up your wallets. For instructions on how to do this, see the next section.
-3. Navigate to the repo : `cd infinite_games` 
-4. Install dependencies: `pip install -r requirements.txt`
-5. Run the appropriate script, replacing values in curly brackets: `python neurons/{miner}.py --netuid 30  --wallet.name {default} --wallet.hotkey {default}`
-6. The venv should be active whenever the neurons are run.
-
-### PM2 Installation
-
-Install and run pm2 commands to keep your miner and validator online at all times.
-
-
-`sudo apt update`
-
-`sudo apt install npm` 
-
-`sudo npm install pm2 -g`
-
-`Confirm pm2 is installed and running correctly`
-
-`pm2 ls`
-
-
-Example Command for validator
-
-`pm2 start neurons/validator.py --interpreter /usr/bin/python3  --name validator -- --wallet.name validator --netuid 155 --wallet.hotkey hotkey --subtensor.network testnet --logging.debug` 
-
-Example Command for miner
-
-`pm2 start neurons/miner.py --interpreter /usr/bin/python3  --name miner -- --wallet.name miner --netuid 155 --wallet.hotkey hotkey --subtensor.network testnet --logging.debug`
-
-Variable Explanation
-
---wallet.name: Provide the name of your wallet.
---wallet.hotkey: Enter your wallet's hotkey.
---netuid: Use 155 for testnet.
---subtensor.network: Specify the network you want to use (finney, test, local, etc).
---logging.debug: Adjust the logging level according to your preference.
---axon.port: Specify the port number you want to use.
---neuron.name: Trials for this miner go in miner.root / (wallet_cold - wallet_hot) / miner.name.
---neuron.device: Device to run the validator on. cuda or cpu
-
-Monitor the status and logs:
-
-`pm2 status`
-`pm2 logs 0`
-
-### Computational requirements
-
-Currently the requirements are minimal for a validator and depend on the model used for the miner. We will update this section regularly.
+Regarding instructions and requirements, see [here](docs/validator.md) for validators and [here](docs/miner.md) for miners.
 
 ## Setting up a bittensor wallet
 A detailed explanation of how to set up a wallet can be found [here](https://docs.bittensor.com/getting-started/wallets). 

@@ -172,8 +172,6 @@ Explanation of each variable:
 --subtensor.network: Specify the network you want to use (finney, test, local, etc).
 --logging.debug: Adjust the logging level according to your preference.
 --axon.port: Specify the port number you want to use.
---neuron.name: Trials for this miner go in miner.root / (wallet_cold - wallet_hot) / miner.name.
---neuron.device: Device to run the validator on (cuda or cpu)
 
 You can monitor the status and logs using these commands:
 

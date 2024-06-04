@@ -168,3 +168,19 @@ class BaseNeuron(ABC):
         bt.logging.warning(
             "load_state() not implemented for this neuron. You can implement this function to load model checkpoints or other useful data."
         )
+
+    def print_info(self):
+        metagraph = self.metagraph
+        self.uid = self.metagraph.hotkeys.index(self.wallet.hotkey.ss58_address)
+
+        log = (
+            "Validator | "
+            f"Step:{self.step} | "
+            f"UID:{self.uid} | "
+            f"Block:{self.block} | "
+            f"Stake:{metagraph.S[self.uid]} | "
+            f"VTrust:{metagraph.Tv[self.uid]} | "
+            f"Dividend:{metagraph.D[self.uid]} | "
+            f"Emission:{metagraph.E[self.uid]}"
+        )
+        bt.logging.info(log)

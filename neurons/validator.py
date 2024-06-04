@@ -77,7 +77,6 @@ import infinite_games
 
 # import base validator class which takes care of most of the boilerplate
 from infinite_games.base.validator import BaseValidatorNeuron
-from infinite_games.validator.reward import EmissionSource
 
 RETRY_TIME = 5 # In seconds
 #CUTOFF = 7200 # Roughly a day
@@ -191,7 +190,6 @@ class Validator(BaseValidatorNeuron):
 
         block_start = self.block
         miner_uids = infinite_games.utils.uids.get_all_uids(self)
-        
         # update markets
         bt.logging.info("Fetching market events...")
         settled_markets = await self.update_markets() or []
@@ -258,5 +256,6 @@ bt.debug(True)
 if __name__ == "__main__":
     with Validator() as validator:
         while True:
+            validator.print_info()
             bt.logging.info("Validator running...", time.time())
             time.sleep(5)

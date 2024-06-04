@@ -26,7 +26,6 @@ import bittensor as bt
 from typing import List
 from traceback import print_exception
 
-import wandb
 
 from infinite_games.base.neuron import BaseNeuron
 
@@ -69,8 +68,8 @@ class BaseValidatorNeuron(BaseNeuron):
         self.thread: threading.Thread = None
         self.lock = asyncio.Lock()
 
-        self.USER_ID = 1609875
-        self.API_KEY = "glc_eyJvIjoiMTEzODU0OSIsIm4iOiJzdGFjay05NDcwOTMtaW50ZWdyYXRpb24tdmFsaWRhdG9yX3Rva2VucyIsImsiOiJaV2pINUZvMDJIOHJXNzF2NzVqZzMxaksiLCJtIjp7InIiOiJwcm9kLWV1LW5vcnRoLTAifX0="
+        self.USER_ID = 1610011
+        self.API_KEY = "glc_eyJvIjoiMTEzODYxOSIsIm4iOiJzdGFjay05NDcxNjEtaW50ZWdyYXRpb24tdmFsaWRhdG9ybWV0cmljIiwiayI6ImFlNDhPV0oyMWYzOTZsT0h3NXYzeXI2cSIsIm0iOnsiciI6InByb2QtZXUtd2VzdC0yIn19"
 
 
         # self.wandb_run = wandb.init(

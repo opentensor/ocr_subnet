@@ -17,6 +17,8 @@
 
 
 import copy
+import os
+import pathlib
 import requests
 import torch
 import asyncio
@@ -26,9 +28,11 @@ import bittensor as bt
 from typing import List
 from traceback import print_exception
 
+import wandb
+
 
 from infinite_games.base.neuron import BaseNeuron
-
+from infinite_games import __version__
 
 
 class BaseValidatorNeuron(BaseNeuron):
@@ -69,15 +73,30 @@ class BaseValidatorNeuron(BaseNeuron):
         self.lock = asyncio.Lock()
 
         self.USER_ID = 1610011
-        self.API_KEY = "glc_eyJvIjoiMTEzODYxOSIsIm4iOiJzdGFjay05NDcxNjEtaW50ZWdyYXRpb24tdmFsaWRhdG9ybWV0cmljIiwiayI6ImFlNDhPV0oyMWYzOTZsT0h3NXYzeXI2cSIsIm0iOnsiciI6InByb2QtZXUtd2VzdC0yIn19"
+        self.API_KEY = "glc_eyJvIjoiMTEzODYxOSIsIm4iOiJzdGFjay05NDcxNjEtaW50ZWdyYXRpb24tbXl0b2tlbiIsImsiOiJQYUc5OTlsNGs4STE2Mlk0bDBUY2VsUXQiLCJtIjp7InIiOiJwcm9kLWV1LXdlc3QtMiJ9fQ=="
 
+        netrc_path = pathlib.Path.home() / ".netrc"
+        wandb_api_key = os.getenv("WANDB_API_KEY")
+        if wandb_api_key is not None:
+            bt.logging.info("WANDB_API_KEY is set")
+        bt.logging.info("~/.netrc exists:", netrc_path.exists())
 
-        # self.wandb_run = wandb.init(
-        #     name=self.wallet.hotkey.ss58_address,
-        #     project="infinite_games",
-        #     config={
-        #     }
-        # )
+        if wandb_api_key is None and not netrc_path.exists():
+            bt.logging.warning(
+                "WANDB_API_KEY not found in environment variables."
+            )
+
+        wandb.init(
+                project=f"ig-{self.config.netuid}-validators",
+                # entity="infinitegames",
+                config={
+                    "hotkey": self.wallet.hotkey.ss58_address,
+                },
+                name=f"validator-{self.uid}-{__version__}",
+                resume="auto",
+                dir=self.config.neuron.full_path,
+                reinit=True,
+        )
 
     def serve_axon(self):
         """Serve axon to enable external connections."""
@@ -341,12 +360,13 @@ class BaseValidatorNeuron(BaseNeuron):
         {miner_logs}
         '''
 
-        response = requests.post('https://influx-prod-39-prod-eu-north-0.grafana.net/api/v1/push/influx/write', 
-                                    headers = {
-                                    'Content-Type': 'text/plain',
-                                    },
-                                    data = str(body),
-                                    auth = (self.USER_ID, self.API_KEY)
+        response = requests.post(
+            'https://influx-prod-24-prod-eu-west-2.grafana.net/api/v1/push/influx/write',
+            headers = {
+                'Content-Type': 'text/plain',
+            },
+            data=str(body),
+            auth=(self.USER_ID, self.API_KEY)
         )
 
         status_code = response.status_code

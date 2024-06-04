@@ -111,6 +111,9 @@ async def crawl_market(session, cid, seq, blocktime):
 
         # pprint(check.get('questions'),check['tokens'])
         # if cid == "0x002a797edf040e8a053e62b26d85a0292df091c5cacb303ae31407c8a050a32c":
+        if not check:
+            bt.logging.error(f"Error fetching event {cid}, skip.")
+            return
         if check.get('market_slug') == "will-a-republican-win-maryland-us-senate-election":
             bt.logging.info("Event resolved (debug): {}".format(cid))
             check["closed"] = True

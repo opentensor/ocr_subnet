@@ -20,12 +20,11 @@ import typing
 import bittensor as bt
 
 # Bittensor OCR Miner
-import ocr_subnet
+import infinite_games
 
 # import base miner class which takes care of most of the boilerplate
-from ocr_subnet.base.miner import BaseMinerNeuron
-from ocr_subnet.validator.reward import EmissionSource
-#from ocr_subnet.protocol import EmissionPredictorSynapse
+from infinite_games.base.miner import BaseMinerNeuron
+#from infinite_games.protocol import EmissionPredictorSynapse
 
 class Miner(BaseMinerNeuron):
     """
@@ -40,14 +39,10 @@ class Miner(BaseMinerNeuron):
 
     def __init__(self, config=None):
         super(Miner, self).__init__(config=config)
-        src = EmissionSource()
-        src.sync()
-        self.default_emission = src.calculate_emission()
-
 
     async def forward(
-        self, synapse: ocr_subnet.protocol.EventPredictionSynapse
-    ) -> ocr_subnet.protocol.EventPredictionSynapse:
+        self, synapse: infinite_games.protocol.EventPredictionSynapse
+    ) -> infinite_games.protocol.EventPredictionSynapse:
         """
         Processes the incoming synapse and attaches the response to the synapse.
         """
@@ -59,7 +54,7 @@ class Miner(BaseMinerNeuron):
         return synapse
 
     async def blacklist(
-        self, synapse: ocr_subnet.protocol.EventPredictionSynapse
+        self, synapse: infinite_games.protocol.EventPredictionSynapse
     ) -> typing.Tuple[bool, str]:
         """
         Determines whether an incoming request should be blacklisted and thus ignored. Your implementation should
@@ -103,7 +98,7 @@ class Miner(BaseMinerNeuron):
         )
         return False, "Hotkey recognized!"
 
-    async def priority(self, synapse: ocr_subnet.protocol.EventPredictionSynapse) -> float:
+    async def priority(self, synapse: infinite_games.protocol.EventPredictionSynapse) -> float:
         """
         The priority function determines the order in which requests are handled. More valuable or higher-priority
         requests are processed before others. You should design your own priority mechanism with care.

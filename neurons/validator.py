@@ -24,6 +24,14 @@ import torch
 import collections as c
 import requests
 import json
+import infinite_games
+
+# import base validator class which takes care of most of the boilerplate
+from infinite_games.base.validator import BaseValidatorNeuron
+
+RETRY_TIME = 5 # In seconds
+#CUTOFF = 7200 # Roughly a day
+CUTOFF = 10
 
 
 class MinerSubmissions:
@@ -71,16 +79,6 @@ class MinerSubmissions:
         return result
 
 
-    
-
-import infinite_games
-
-# import base validator class which takes care of most of the boilerplate
-from infinite_games.base.validator import BaseValidatorNeuron
-
-RETRY_TIME = 5 # In seconds
-#CUTOFF = 7200 # Roughly a day
-CUTOFF = 10
 
 async def retry_to_effect(session, url):
     try:

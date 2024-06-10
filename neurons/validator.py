@@ -181,11 +181,6 @@ class Validator(BaseValidatorNeuron):
     async def forward(self):
         """
         The forward function is called by the validator every time step.
-        
-        COMMENT - we want this to happen every tempo / epoch actually not every time step
-
-        Args:
-            self (:obj:`bittensor.neuron.Neuron`): The neuron object which contains all the necessary state for the validator.
 
         """
 
@@ -228,10 +223,7 @@ class Validator(BaseValidatorNeuron):
             for uid in miner_uids:
                 ans = self.submissions.get(uid, market["condition_id"], self.blocktime)
                 if ans is None:
-                    if True:
-                        scores.append(random.random() / 10)
-                    else:
-                        scores.append(0)
+                    scores.append(0)
                 else:
                     ans = max(0, min(1, ans))  # Clamp the answer
                     correct_ans = get_answer(market)
@@ -246,9 +238,6 @@ class Validator(BaseValidatorNeuron):
         self.blocktime += 1
         while block_start == self.block:
             time.sleep(1)
-
-        # Update the scores based on the rewards. You may want to define your own update_scores function for custom behavior.
-        # self.update_scores(rewards, miner_uids)
 
 
 # The main function parses the configuration and runs the validator.

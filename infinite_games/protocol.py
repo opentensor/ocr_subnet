@@ -18,15 +18,22 @@
 
 import bittensor as bt
 from typing import Optional, List
-    
+
+from infinite_games.events.base import ProviderEvent
+
+
 class EventPredictionSynapse(bt.Synapse):
-    # Dictionary of predictions. The keys are Polymarket condition
+    # Dictionary of predictions. The keys are event provider ids
     # IDs, the values are the probability of the *second* result
     # occurring, so certainty that the first result occurs would be 0.0
 
     events: dict = {}
 
-    def init(self, activate_markets):
+    def init(self, events: List[ProviderEvent]):
         self.events = {}
-        for cid in activate_markets.keys():
-            self.events[cid] = 0.5
+        for event in events:
+            self.events[f'{event.event_type}-{event.event_id}'] = {
+                "event_type": event.event_type,
+                "description": event.description,
+                "starts": event.starts.timestamp()
+            }

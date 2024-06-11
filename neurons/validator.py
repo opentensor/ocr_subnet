@@ -28,6 +28,8 @@ import infinite_games
 
 # import base validator class which takes care of most of the boilerplate
 from infinite_games.base.validator import BaseValidatorNeuron
+from infinite_games.events.azuro import AzuroEventProvider
+from infinite_games.events.base import EventStatus, ProviderEvent
 
 RETRY_TIME = 5 # In seconds
 #CUTOFF = 7200 # Roughly a day
@@ -138,45 +140,31 @@ class Validator(BaseValidatorNeuron):
         self.active_markets = {}
         self.submissions = MinerSubmissions(CUTOFF)
         self.blocktime = 0
+        self.event_provider = AzuroEventProvider()
+        self.event_provider.on_event_updated_hook(self.on_event_update)
+        loop = asyncio.get_event_loop()
+        loop.create_task(self.event_provider.listen_events())
 
-    async def update_markets(self):
-        first = True
-        cursor = None
-        while cursor != "LTE=":
-            #bt.logging.debug("Looping", cursor)
-            try:
-                if first:
-                    resp = requests.get("https://clob.polymarket.com/sampling-markets")
-                    nxt = resp.json()
-                    first = False
+    def on_event_update(self, pe: ProviderEvent):
+        if pe.status == EventStatus.SETTLED:
+            miner_uids = infinite_games.utils.uids.get_all_uids(self)
+
+            scores = []
+            for uid in miner_uids:
+                ans = pe.miner_predictions.get(uid)
+                if ans is None:
+                    scores.append(0)
                 else:
-                    resp = requests.get("https://clob.polymarket.com/sampling-markets?next_cursor={}".format(cursor))
-                    nxt = resp.json()
-                cursor = nxt["next_cursor"]
-                for mart in nxt["data"]:
-                    if mart['condition_id'] not in self.active_markets:
-                        self.active_markets[mart["condition_id"]] = self.blocktime
-            except json.decoder.JSONDecodeError:
-                print("Got error, retrying...")
-                time.sleep(3)
-        settled_markets = []
-        bt.logging.info(f'Blocktime: {self.blocktime} ')
-        # max_events = 10
-        async with aiohttp.ClientSession() as session:
-            markets = await asyncio.gather(*[
-                crawl_market(session, cid, market_blocktime, self.blocktime) for cid, market_blocktime in self.active_markets.items()]
-            )
-        fetched = 0
-        closed = 0
-        for market in markets:
-            if market:
-                fetched += 1
-                if market['closed']:
-                    closed += 1
-                    settled_markets.append(market)
-                    self.active_markets.pop(market["condition_id"])
-        bt.logging.info(f'Fetched markets: {fetched}, closed: {closed}')
-        return settled_markets
+                    ans = max(0, min(1, ans))  # Clamp the answer
+                    correct_ans = pe.answer
+                    if correct_ans == 2:
+                        scores.append(ans**2)
+                    elif correct_ans == 1:
+                        scores.append((1-ans)**2)
+                    else:
+                        scores.append(0)
+                        bt.logging.warning(f"Unknown result from market: {pe.event_type} - {pe.event_id}")
+            self.update_scores(torch.FloatTensor(scores), miner_uids)
 
     async def forward(self):
         """
@@ -187,17 +175,16 @@ class Validator(BaseValidatorNeuron):
         block_start = self.block
         miner_uids = infinite_games.utils.uids.get_all_uids(self)
         # update markets
-        bt.logging.info("Fetching market events...")
-        settled_markets = await self.update_markets() or []
-        if len(settled_markets) > 0:
-            bt.logging.info(f'Settled markets: {len(settled_markets)}')
+
+        bt.logging.info("Syncing provider market events...")
+        await self.event_provider.sync_events()
+
         # Create synapse object to send to the miner.
         synapse = infinite_games.protocol.EventPredictionSynapse()
-        synapse.init(self.active_markets)
+        synapse.init(list(self.event_provider.registered_events.values()))
         # print("Synapse body hash", synapse.computed_body_hash)
         bt.logging.info(f'Axons: {len(self.metagraph.axons)}')
         for axon in self.metagraph.axons:
-
             bt.logging.info(f'IP: {axon.ip}, hotkey id: {axon.hotkey}')
 
         bt.logging.info("Querying miners... ")
@@ -216,25 +203,6 @@ class Validator(BaseValidatorNeuron):
             for (cid, ans) in resp.events.items():
                 self.submissions.insert(uid, cid, self.blocktime, ans)
         bt.logging.info("Received responses")
-
-        # Score events
-        for market in settled_markets:
-            scores = []
-            for uid in miner_uids:
-                ans = self.submissions.get(uid, market["condition_id"], self.blocktime)
-                if ans is None:
-                    scores.append(0)
-                else:
-                    ans = max(0, min(1, ans))  # Clamp the answer
-                    correct_ans = get_answer(market)
-                    if correct_ans == 2:
-                        scores.append(ans**2)
-                    elif correct_ans == 1:
-                        scores.append((1-ans)**2)
-                    else:
-                        scores.append(0)
-                        bt.logging.warning("Unknown result: {}".format(market["condition_id"]))
-            self.update_scores(torch.FloatTensor(scores), miner_uids)
         self.blocktime += 1
         while block_start == self.block:
             time.sleep(1)
